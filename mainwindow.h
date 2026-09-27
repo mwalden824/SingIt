@@ -2,8 +2,11 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "musicdatabase.h"
+#include <QMediaPlayer>
+#include <QAudioOutput>
+#include <QThread>
 
+#include "musicdatabase.h"
 #include <onnxruntime_cxx_api.h>
 #include <tokenizers_cpp.h>
 
@@ -82,6 +85,16 @@ private:
 
     std::unique_ptr<ModelContext> model;
     MusicDatabase musicDatabase;
+
+    QMediaPlayer *mediaPlayer;
+    QAudioOutput *audioOutput;
+
+    qint64 playbackStopTime;
+
+    void playMp3Section(
+        const QString& filename,
+        int startTimeMs,
+        int stopTimeMs);
 };
 
 

@@ -432,7 +432,51 @@ float MainWindow::cosineSimilarity(
         );
 }
 
+void MainWindow::playMp3Section(
+    const QString& filename,
+    int startTimeMs,
+    int stopTimeMs)
+{
+    if (startTimeMs < 0 ||
+        stopTimeMs <= startTimeMs)
+    {
+        qDebug() << "Invalid playback times.";
+        return;
+    }
 
+    mediaPlayer->stop();
+
+    playbackStopTime = stopTimeMs;
+
+    mediaPlayer->setSource(
+        QUrl::fromLocalFile(filename));
+
+    // Wait until the media has loaded.
+    while (mediaPlayer->mediaStatus() !=
+           QMediaPlayer::LoadedMedia)
+    {
+        if (mediaPlayer->mediaStatus() ==
+            QMediaPlayer::InvalidMedia)
+        {
+            qDebug() << "Failed to load media:"
+                     << mediaPlayer->errorString();
+            return;
+        }
+
+        QCoreApplication::processEvents();
+        QThread::msleep(10);
+    }
+
+    qDebug() << "Media loaded.";
+    qDebug() << "Seeking to:" << startTimeMs;
+
+    mediaPlayer->setPosition(startTimeMs);
+
+    qDebug() << "Position after seek:"
+             << mediaPlayer->position();
+
+    mediaPlayer->play();
+}
 // ============================================================
 // MainWindow
 // ============================================================
@@ -441,13 +485,29 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
     ui(new Ui::MainWindow),
     model(nullptr),
-    musicDatabase("C:/Walden/Projects/MusicApp/SingIt/music.db")
+    musicDatabase("C:/Walden/Projects/MusicApp/SingIt/music.db"),
+    mediaPlayer(new QMediaPlayer(this)),
+    audioOutput(new QAudioOutput(this)),
+    playbackStopTime(0)
 {
     ui->setupUi(this);
+    mediaPlayer->setAudioOutput(audioOutput);
+    // mediaPlayer->seek
+    connect(
+        mediaPlayer,
+        &QMediaPlayer::positionChanged,
+        this,
+        [this](qint64 position)
+        {
+            if (position >= playbackStopTime)
+            {
+                mediaPlayer->stop();
+            }
+        }
+    );
 
     try
     {
-
         model =
             std::make_unique<ModelContext>(
                 initONNXRuntimeAndTokenizer()
@@ -507,6 +567,18 @@ void MainWindow::on_searchButton_clicked()
 
             qDebug() << "Distance: " << res.distance;
         }
+
+        SearchResult result = results[0];
+
+        QString fullPath =
+            "C:/Walden/Projects/MusicApp/music/allMusic/" +
+            QString::fromStdString(result.filename);
+
+        playMp3Section(
+            fullPath,
+            static_cast<int>(result.startTimeMs),
+            static_cast<int>(result.stopTimeMs)
+        );
     }
     catch (const std::exception& e)
     {
