@@ -26,6 +26,8 @@ public:
     explicit MusicDatabase(const std::string& databasePath);
     ~MusicDatabase();
 
+    static constexpr int EmbeddingDimension = 384;
+
     MusicDatabase(const MusicDatabase&) = delete;
     MusicDatabase& operator=(const MusicDatabase&) = delete;
 
@@ -64,8 +66,6 @@ private:
         ) const;
 
     void loadSqliteVec();
-
-    static constexpr int EmbeddingDimension = 384;
 };
 
 #endif // MUSICDATABASE_H

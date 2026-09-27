@@ -56,6 +56,20 @@ public:
         QWidget *parent = nullptr
         );
 
+    ModelContext initONNXRuntimeAndTokenizer();
+    std::vector<int32_t> tokenizeString(
+        tokenizers::Tokenizer& tokenizer,
+        const std::string& sentence
+        );
+    static std::vector<float> calculateEmbeddingVector(
+        Ort::Session& session,
+        const std::vector<int32_t>& tokenIds
+        );
+    float cosineSimilarity(
+        const std::vector<float>& a,
+        const std::vector<float>& b
+        );
+
     ~MainWindow() override;
 
 

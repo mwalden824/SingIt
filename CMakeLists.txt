@@ -27,6 +27,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         musicdatabase.h musicdatabase.cpp
+        musicimporter.h musicimporter.cpp
     )
 else()
     if(ANDROID)

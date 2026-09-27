@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "musicdatabase.h"
+#include "musicimporter.h"
 
 #include <QDebug>
 
@@ -15,7 +16,7 @@
 // Initialization
 // ============================================================
 
-ModelContext initONNXRuntimeAndTokenizer()
+ModelContext MainWindow::initONNXRuntimeAndTokenizer()
 {
     // --------------------------------------------------------
     // Read tokenizer.json into memory
@@ -95,7 +96,7 @@ ModelContext initONNXRuntimeAndTokenizer()
 // Tokenization
 // ============================================================
 
-std::vector<int32_t> tokenizeString(
+std::vector<int32_t> MainWindow::tokenizeString(
     tokenizers::Tokenizer& tokenizer,
     const std::string& sentence
     )
@@ -104,21 +105,21 @@ std::vector<int32_t> tokenizeString(
         tokenizer.Encode(sentence);
 
 
-    qDebug() << "";
-    qDebug() << "Sentence:"
-             << QString::fromStdString(sentence);
+    // qDebug() << "";
+    // qDebug() << "Sentence:"
+    //          << QString::fromStdString(sentence);
 
 
-    qDebug() << "Number of tokens:"
-             << tokenIds.size();
+    // qDebug() << "Number of tokens:"
+    //          << tokenIds.size();
 
 
-    qDebug() << "Token IDs:";
+    // qDebug() << "Token IDs:";
 
-    for (int32_t id : tokenIds)
-    {
-        qDebug() << "  " << id;
-    }
+    // for (int32_t id : tokenIds)
+    // {
+    //     qDebug() << "  " << id;
+    // }
 
 
     return tokenIds;
@@ -129,7 +130,7 @@ std::vector<int32_t> tokenizeString(
 // Calculate Embedding
 // ============================================================
 
-std::vector<float> calculateEmbeddingVector(
+std::vector<float> MainWindow::calculateEmbeddingVector(
     Ort::Session& session,
     const std::vector<int32_t>& tokenIds
     )
@@ -188,9 +189,9 @@ std::vector<float> calculateEmbeddingVector(
         );
 
 
-    qDebug() << "";
-    qDebug() << "ONNX input sequence length:"
-             << sequenceLength;
+    // qDebug() << "";
+    // qDebug() << "ONNX input sequence length:"
+    //          << sequenceLength;
 
 
     // --------------------------------------------------------
@@ -240,7 +241,7 @@ std::vector<float> calculateEmbeddingVector(
             );
 
 
-    qDebug() << "ONNX input tensors created.";
+    // qDebug() << "ONNX input tensors created.";
 
 
     // --------------------------------------------------------
@@ -277,8 +278,8 @@ std::vector<float> calculateEmbeddingVector(
             );
 
 
-    qDebug() << "";
-    qDebug() << "ONNX inference completed.";
+    // qDebug() << "";
+    // qDebug() << "ONNX inference completed.";
 
 
     // --------------------------------------------------------
@@ -294,12 +295,12 @@ std::vector<float> calculateEmbeddingVector(
         outputInfo.GetShape();
 
 
-    qDebug() << "Output shape:";
+    // qDebug() << "Output shape:";
 
-    for (auto dimension : outputShape)
-    {
-        qDebug() << "  " << dimension;
-    }
+    // for (auto dimension : outputShape)
+    // {
+    //     qDebug() << "  " << dimension;
+    // }
 
 
     const float* outputData =
@@ -412,17 +413,17 @@ std::vector<float> calculateEmbeddingVector(
     // Return normalized embedding
     // --------------------------------------------------------
 
-    qDebug() << "";
-    qDebug() << "Embedding size:"
-             << embedding.size();
+    // qDebug() << "";
+    // qDebug() << "Embedding size:"
+    //          << embedding.size();
 
 
-    qDebug() << "First 10 normalized values:";
+    // qDebug() << "First 10 normalized values:";
 
-    for (int i = 0; i < 10; ++i)
-    {
-        qDebug() << "  " << embedding[i];
-    }
+    // for (int i = 0; i < 10; ++i)
+    // {
+    //     qDebug() << "  " << embedding[i];
+    // }
 
 
     return embedding;
@@ -433,7 +434,7 @@ std::vector<float> calculateEmbeddingVector(
 // Cosine Similarity
 // ============================================================
 
-float cosineSimilarity(
+float MainWindow::cosineSimilarity(
     const std::vector<float>& a,
     const std::vector<float>& b
     )
@@ -619,50 +620,96 @@ MainWindow::MainWindow(QWidget *parent)
         // qDebug() << "";
 
 
-        // Testing database setup and class implementation
-        MusicDatabase musicDb("C:/Walden/Projects/MusicApp/SingIt/music.db");
-        musicDb.initialize();
+        // // Testing database setup and class implementation
+        // MusicDatabase musicDb("C:/Walden/Projects/MusicApp/SingIt/music.db");
+        // musicDb.initialize();
 
+        // model =
+        //     std::make_unique<ModelContext>(
+        //         initONNXRuntimeAndTokenizer()
+        //         );
+
+        // const std::string testLyric = "Here is some random lyric text, yo yo yo";
+        // const std::string testSearch = "I have you some random lyric text, yo";
+        // // const std::string testSearch = "Here is some random lyric text, yo y yo";
+
+        // int64_t songRowId = musicDb.addSong(
+        //     "Kanye West",
+        //     "Jesus Walks",
+        //     "C:/Walden/Projects/MusicApp/SingIt/blah.mp3",
+        //     3002
+        //     );
+
+        // int64_t lyricRowId = musicDb.addLyric(
+        //     songRowId,
+        //     3*60*1000 + 16*1000,
+        //     3*60*1000 + 19*1000,
+        //     testLyric
+        //     );
+
+        // // Calculate Embedding
+        // auto tokens =
+        //     tokenizeString(
+        //         *model->tokenizer,
+        //         testLyric
+        //         );
+
+        // auto embedding =
+        //     calculateEmbeddingVector(
+        //         model->session,
+        //         tokens
+        //         );
+
+        // musicDb.addEmbedding(
+        //     lyricRowId,
+        //     embedding
+        //     );
+
+        // // Now perform a search by embedding vector
+        // auto tokensSearch =
+        //     tokenizeString(
+        //         *model->tokenizer,
+        //         testSearch
+        //         );
+
+        // auto embeddingSearch =
+        //     calculateEmbeddingVector(
+        //         model->session,
+        //         tokensSearch
+        //         );
+
+        // std::vector<SearchResult> results = musicDb.searchSimilar(
+        //     embeddingSearch,
+        //     1
+        //     );
+
+        // for (SearchResult res : results)
+        // {
+        //     qDebug() << "Artist: " << res.artist << "\n";
+        //     qDebug() << "Track Name: " << res.trackName << "\n";
+        //     qDebug() << "File Name: " << res.filename << "\n";
+        //     qDebug() << "File Number: " << res.fileNumber << "\n\n";
+
+        //     qDebug() << "Start Time (ms): " << res.startTimeMs << "\n";
+        //     qDebug() << "Stop Time (ms): " << res.stopTimeMs << "\n";
+        //     qDebug() << "Lyric: " << res.lyricText << "\n";
+
+        //     qDebug() << "Distance: " << res.distance << "\n";
+        // }
+
+        // Run importer
+        // model = initONNXRuntimeAndTokenizer();
         model =
             std::make_unique<ModelContext>(
                 initONNXRuntimeAndTokenizer()
                 );
 
-        const std::string testLyric = "Here is some random lyric text, yo yo yo";
-        const std::string testSearch = "I have you some random lyric text, yo";
-        // const std::string testSearch = "Here is some random lyric text, yo y yo";
+        MusicDatabase musicDatabase(
+            "C:/Walden/Projects/MusicApp/SingIt/music.db");
 
-        int64_t songRowId = musicDb.addSong(
-            "Kanye West",
-            "Jesus Walks",
-            "C:/Walden/Projects/MusicApp/SingIt/blah.mp3",
-            3002
-            );
+        musicDatabase.initialize();
 
-        int64_t lyricRowId = musicDb.addLyric(
-            songRowId,
-            3*60*1000 + 16*1000,
-            3*60*1000 + 19*1000,
-            testLyric
-            );
-
-        // Calculate Embedding
-        auto tokens =
-            tokenizeString(
-                *model->tokenizer,
-                testLyric
-                );
-
-        auto embedding =
-            calculateEmbeddingVector(
-                model->session,
-                tokens
-                );
-
-        musicDb.addEmbedding(
-            lyricRowId,
-            embedding
-            );
+        const std::string testSearch = "Go fuck yourself";
 
         // Now perform a search by embedding vector
         auto tokensSearch =
@@ -677,7 +724,7 @@ MainWindow::MainWindow(QWidget *parent)
                 tokensSearch
                 );
 
-        std::vector<SearchResult> results = musicDb.searchSimilar(
+        std::vector<SearchResult> results = musicDatabase.searchSimilar(
             embeddingSearch,
             1
             );
@@ -695,6 +742,18 @@ MainWindow::MainWindow(QWidget *parent)
 
             qDebug() << "Distance: " << res.distance << "\n";
         }
+
+
+        // MusicImporter importer(
+        //     musicDatabase,
+        //     "C:/Walden/Projects/MusicApp/lrclib-db-dump-20260828T090200Z.sqlite3/db.sqlite3",
+        //     "C:/Walden/Projects/MusicApp/MySpotifyLibrary.csv",
+        //     "C:/Walden/Projects/MusicApp/music/allMusic",
+        //     *model);
+
+        // importer.importAll(
+        //     "C:/Walden/Projects/MusicApp/import.log");
+
 
     }
     catch (const std::exception& e)
