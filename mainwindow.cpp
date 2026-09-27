@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "musicdatabase.h"
 #include "musicimporter.h"
 
 #include <QDebug>
@@ -10,7 +9,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <array>
-
 
 // ============================================================
 // Initialization
@@ -104,24 +102,6 @@ std::vector<int32_t> MainWindow::tokenizeString(
     std::vector<int32_t> tokenIds =
         tokenizer.Encode(sentence);
 
-
-    // qDebug() << "";
-    // qDebug() << "Sentence:"
-    //          << QString::fromStdString(sentence);
-
-
-    // qDebug() << "Number of tokens:"
-    //          << tokenIds.size();
-
-
-    // qDebug() << "Token IDs:";
-
-    // for (int32_t id : tokenIds)
-    // {
-    //     qDebug() << "  " << id;
-    // }
-
-
     return tokenIds;
 }
 
@@ -189,11 +169,6 @@ std::vector<float> MainWindow::calculateEmbeddingVector(
         );
 
 
-    // qDebug() << "";
-    // qDebug() << "ONNX input sequence length:"
-    //          << sequenceLength;
-
-
     // --------------------------------------------------------
     // Create ONNX tensors
     // --------------------------------------------------------
@@ -240,10 +215,6 @@ std::vector<float> MainWindow::calculateEmbeddingVector(
             inputShape.size()
             );
 
-
-    // qDebug() << "ONNX input tensors created.";
-
-
     // --------------------------------------------------------
     // Run ONNX model
     // --------------------------------------------------------
@@ -277,11 +248,6 @@ std::vector<float> MainWindow::calculateEmbeddingVector(
             1
             );
 
-
-    // qDebug() << "";
-    // qDebug() << "ONNX inference completed.";
-
-
     // --------------------------------------------------------
     // Get output information
     // --------------------------------------------------------
@@ -293,15 +259,6 @@ std::vector<float> MainWindow::calculateEmbeddingVector(
 
     auto outputShape =
         outputInfo.GetShape();
-
-
-    // qDebug() << "Output shape:";
-
-    // for (auto dimension : outputShape)
-    // {
-    //     qDebug() << "  " << dimension;
-    // }
-
 
     const float* outputData =
         outputTensors[0]
@@ -408,24 +365,6 @@ std::vector<float> MainWindow::calculateEmbeddingVector(
                 );
     }
 
-
-    // --------------------------------------------------------
-    // Return normalized embedding
-    // --------------------------------------------------------
-
-    // qDebug() << "";
-    // qDebug() << "Embedding size:"
-    //          << embedding.size();
-
-
-    // qDebug() << "First 10 normalized values:";
-
-    // for (int i = 0; i < 10; ++i)
-    // {
-    //     qDebug() << "  " << embedding[i];
-    // }
-
-
     return embedding;
 }
 
@@ -501,260 +440,20 @@ float MainWindow::cosineSimilarity(
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
     ui(new Ui::MainWindow),
-    model(nullptr)
+    model(nullptr),
+    musicDatabase("C:/Walden/Projects/MusicApp/SingIt/music.db")
 {
     ui->setupUi(this);
 
-
     try
     {
-        // // ----------------------------------------------------
-        // // Initialize tokenizer + ONNX model
-        // // ----------------------------------------------------
 
-        // model =
-        //     std::make_unique<ModelContext>(
-        //         initONNXRuntimeAndTokenizer()
-        //         );
-
-
-        // // ----------------------------------------------------
-        // // Test sentences
-        // // ----------------------------------------------------
-
-        // std::string sentence1 =
-        //     "The quick brown fox jumps over the lazy dog.";
-
-        // // std::string sentence2 =
-        // //     "A fast brown fox leaps over a sleepy dog.";
-        // std::string sentence2 =
-        //     "This fast animal that looks brown leaped over this this ugly furry creature.";
-
-        // // std::string sentence3 =
-        // //     "The computer is running a graphics program.";
-        // std::string sentence3 =
-        //     "What the fuck is wrong with our president?";
-
-        // // ----------------------------------------------------
-        // // Tokenize
-        // // ----------------------------------------------------
-
-        // auto tokens1 =
-        //     tokenizeString(
-        //         *model->tokenizer,
-        //         sentence1
-        //         );
-
-
-        // auto tokens2 =
-        //     tokenizeString(
-        //         *model->tokenizer,
-        //         sentence2
-        //         );
-
-
-        // auto tokens3 =
-        //     tokenizeString(
-        //         *model->tokenizer,
-        //         sentence3
-        //         );
-
-
-        // // ----------------------------------------------------
-        // // Calculate embeddings
-        // // ----------------------------------------------------
-
-        // auto embedding1 =
-        //     calculateEmbeddingVector(
-        //         model->session,
-        //         tokens1
-        //         );
-
-
-        // auto embedding2 =
-        //     calculateEmbeddingVector(
-        //         model->session,
-        //         tokens2
-        //         );
-
-
-        // auto embedding3 =
-        //     calculateEmbeddingVector(
-        //         model->session,
-        //         tokens3
-        //         );
-
-
-        // // ----------------------------------------------------
-        // // Calculate cosine similarities
-        // // ----------------------------------------------------
-
-        // float similarity12 =
-        //     cosineSimilarity(
-        //         embedding1,
-        //         embedding2
-        //         );
-
-
-        // float similarity13 =
-        //     cosineSimilarity(
-        //         embedding1,
-        //         embedding3
-        //         );
-
-
-        // qDebug() << "";
-        // qDebug() << "================================";
-        // qDebug() << "Cosine Similarity Results";
-        // qDebug() << "================================";
-
-
-        // qDebug() << "Sentence 1 / Sentence 2:"
-        //          << similarity12;
-
-
-        // qDebug() << "Sentence 1 / Sentence 3:"
-        //          << similarity13;
-
-
-        // qDebug() << "";
-
-
-        // // Testing database setup and class implementation
-        // MusicDatabase musicDb("C:/Walden/Projects/MusicApp/SingIt/music.db");
-        // musicDb.initialize();
-
-        // model =
-        //     std::make_unique<ModelContext>(
-        //         initONNXRuntimeAndTokenizer()
-        //         );
-
-        // const std::string testLyric = "Here is some random lyric text, yo yo yo";
-        // const std::string testSearch = "I have you some random lyric text, yo";
-        // // const std::string testSearch = "Here is some random lyric text, yo y yo";
-
-        // int64_t songRowId = musicDb.addSong(
-        //     "Kanye West",
-        //     "Jesus Walks",
-        //     "C:/Walden/Projects/MusicApp/SingIt/blah.mp3",
-        //     3002
-        //     );
-
-        // int64_t lyricRowId = musicDb.addLyric(
-        //     songRowId,
-        //     3*60*1000 + 16*1000,
-        //     3*60*1000 + 19*1000,
-        //     testLyric
-        //     );
-
-        // // Calculate Embedding
-        // auto tokens =
-        //     tokenizeString(
-        //         *model->tokenizer,
-        //         testLyric
-        //         );
-
-        // auto embedding =
-        //     calculateEmbeddingVector(
-        //         model->session,
-        //         tokens
-        //         );
-
-        // musicDb.addEmbedding(
-        //     lyricRowId,
-        //     embedding
-        //     );
-
-        // // Now perform a search by embedding vector
-        // auto tokensSearch =
-        //     tokenizeString(
-        //         *model->tokenizer,
-        //         testSearch
-        //         );
-
-        // auto embeddingSearch =
-        //     calculateEmbeddingVector(
-        //         model->session,
-        //         tokensSearch
-        //         );
-
-        // std::vector<SearchResult> results = musicDb.searchSimilar(
-        //     embeddingSearch,
-        //     1
-        //     );
-
-        // for (SearchResult res : results)
-        // {
-        //     qDebug() << "Artist: " << res.artist << "\n";
-        //     qDebug() << "Track Name: " << res.trackName << "\n";
-        //     qDebug() << "File Name: " << res.filename << "\n";
-        //     qDebug() << "File Number: " << res.fileNumber << "\n\n";
-
-        //     qDebug() << "Start Time (ms): " << res.startTimeMs << "\n";
-        //     qDebug() << "Stop Time (ms): " << res.stopTimeMs << "\n";
-        //     qDebug() << "Lyric: " << res.lyricText << "\n";
-
-        //     qDebug() << "Distance: " << res.distance << "\n";
-        // }
-
-        // Run importer
-        // model = initONNXRuntimeAndTokenizer();
         model =
             std::make_unique<ModelContext>(
                 initONNXRuntimeAndTokenizer()
                 );
 
-        MusicDatabase musicDatabase(
-            "C:/Walden/Projects/MusicApp/SingIt/music.db");
-
         musicDatabase.initialize();
-
-        const std::string testSearch = "Go fuck yourself";
-
-        // Now perform a search by embedding vector
-        auto tokensSearch =
-            tokenizeString(
-                *model->tokenizer,
-                testSearch
-                );
-
-        auto embeddingSearch =
-            calculateEmbeddingVector(
-                model->session,
-                tokensSearch
-                );
-
-        std::vector<SearchResult> results = musicDatabase.searchSimilar(
-            embeddingSearch,
-            1
-            );
-
-        for (SearchResult res : results)
-        {
-            qDebug() << "Artist: " << res.artist << "\n";
-            qDebug() << "Track Name: " << res.trackName << "\n";
-            qDebug() << "File Name: " << res.filename << "\n";
-            qDebug() << "File Number: " << res.fileNumber << "\n\n";
-
-            qDebug() << "Start Time (ms): " << res.startTimeMs << "\n";
-            qDebug() << "Stop Time (ms): " << res.stopTimeMs << "\n";
-            qDebug() << "Lyric: " << res.lyricText << "\n";
-
-            qDebug() << "Distance: " << res.distance << "\n";
-        }
-
-
-        // MusicImporter importer(
-        //     musicDatabase,
-        //     "C:/Walden/Projects/MusicApp/lrclib-db-dump-20260828T090200Z.sqlite3/db.sqlite3",
-        //     "C:/Walden/Projects/MusicApp/MySpotifyLibrary.csv",
-        //     "C:/Walden/Projects/MusicApp/music/allMusic",
-        //     *model);
-
-        // importer.importAll(
-        //     "C:/Walden/Projects/MusicApp/import.log");
-
-
     }
     catch (const std::exception& e)
     {
@@ -763,6 +462,59 @@ MainWindow::MainWindow(QWidget *parent)
     }
 }
 
+void MainWindow::on_searchButton_clicked()
+{
+    const QString text =
+        ui->searchText->toPlainText().trimmed();
+
+    if (text.isEmpty())
+        return;
+
+    try
+    {
+        // Convert Qt string to std::string.
+        std::string query =
+            text.toStdString();
+
+        auto tokensSearch =
+            tokenizeString(
+                *model->tokenizer,
+                query
+                );
+
+        auto embeddingSearch =
+            calculateEmbeddingVector(
+                model->session,
+                tokensSearch
+                );
+
+        // Search database.
+        std::vector<SearchResult> results = musicDatabase.searchSimilar(
+            embeddingSearch,
+            1
+            );
+
+        for (SearchResult res : results)
+        {
+            qDebug() << "Artist: " << res.artist;
+            qDebug() << "Track Name: " << res.trackName;
+            qDebug() << "File Name: " << res.filename;
+            qDebug() << "File Number: " << res.fileNumber;
+
+            qDebug() << "Start Time (ms): " << res.startTimeMs;
+            qDebug() << "Stop Time (ms): " << res.stopTimeMs;
+            qDebug() << "Lyric: " << res.lyricText;
+
+            qDebug() << "Distance: " << res.distance;
+        }
+    }
+    catch (const std::exception& e)
+    {
+        qDebug()
+        << "Search error:"
+        << e.what();
+    }
+}
 
 MainWindow::~MainWindow()
 {

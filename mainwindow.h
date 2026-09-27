@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "musicdatabase.h"
 
 #include <onnxruntime_cxx_api.h>
 #include <tokenizers_cpp.h>
@@ -11,7 +12,7 @@
 #include <vector>
 
 
-    QT_BEGIN_NAMESPACE
+QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
 }
@@ -72,12 +73,15 @@ public:
 
     ~MainWindow() override;
 
+private slots:
+    void on_searchButton_clicked();
 
 private:
 
     Ui::MainWindow *ui;
 
     std::unique_ptr<ModelContext> model;
+    MusicDatabase musicDatabase;
 };
 
 
