@@ -200,14 +200,39 @@ void MainWindow::on_searchButton_clicked()
         // Play matching lyric section
         // ----------------------------------------------------
 
+        // playMp3Section(
+        //     fullPath,
+        //     static_cast<int>(
+        //         result.startTimeMs
+        //         ),
+        //     static_cast<int>(
+        //         result.stopTimeMs
+        //         )
+        //     );
+
+        const int paddingMs = 2000; // 2 seconds
+
+        // const int songDurationMs =
+        //     static_cast<int>(mediaPlayer->duration());
+        const int songLength =
+            getMp3Duration(fullPath);
+
+        const int startTime =
+            std::max(
+                0,
+                static_cast<int>(result.startTimeMs) - paddingMs
+                );
+
+        const int stopTime =
+            std::min(
+                songLength,
+                static_cast<int>(result.stopTimeMs) + paddingMs
+                );
+
         playMp3Section(
             fullPath,
-            static_cast<int>(
-                result.startTimeMs
-                ),
-            static_cast<int>(
-                result.stopTimeMs
-                )
+            startTime,
+            stopTime
             );
     }
     catch (const std::exception& e)
@@ -300,6 +325,38 @@ void MainWindow::playMp3Section(
     mediaPlayer->play();
 }
 
+int MainWindow::getMp3Duration(
+    const QString& filename)
+{
+    QMediaPlayer player;
+
+    player.setSource(
+        QUrl::fromLocalFile(filename)
+        );
+
+    while (
+        player.mediaStatus() !=
+        QMediaPlayer::LoadedMedia)
+    {
+        if (
+            player.mediaStatus() ==
+            QMediaPlayer::InvalidMedia)
+        {
+            qDebug()
+            << "Failed to load media:"
+            << player.errorString();
+
+            return -1;
+        }
+
+        QCoreApplication::processEvents();
+        QThread::msleep(10);
+    }
+
+    return static_cast<int>(
+        player.duration()
+        );
+}
 
 // ============================================================
 // Destructor

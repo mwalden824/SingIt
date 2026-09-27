@@ -51,6 +51,8 @@ private:
 
     qint64 playbackStopTime;
 
+    int getMp3Duration(
+        const QString& filename);
 
     void playMp3Section(
         const QString& filename,
