@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(SingIt VERSION 0.1 LANGUAGES CXX)
+project(SingIt VERSION 0.1 LANGUAGES C CXX)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -17,12 +17,16 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
+        musicdatabase.h
+        musicdatabase.cpp
+        third_party/sqlite/sqlite3.c
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(SingIt
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        musicdatabase.h musicdatabase.cpp
     )
 else()
     if(ANDROID)
@@ -44,6 +48,7 @@ endif()
 target_include_directories(SingIt PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/onnxruntime/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tokenizers-cpp/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sqlite
 )
 
 target_link_directories(SingIt PRIVATE
@@ -59,6 +64,10 @@ target_link_libraries(SingIt PRIVATE
     tokenizers_c
     ws2_32
     ntdll
+)
+
+target_link_options(SingIt PRIVATE
+    -Wno-drectve
 )
 
 # Copy ONNX Runtime DLL next to the executable after building

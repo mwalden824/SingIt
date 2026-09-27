@@ -84,3 +84,4 @@ CMakeLists.txt.user*
 /.qtcreator/
 /models/
 /third_party/
+music.db
