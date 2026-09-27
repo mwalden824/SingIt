@@ -28,6 +28,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         musicdatabase.h musicdatabase.cpp
         musicimporter.h musicimporter.cpp
+        simsearchmodel.h simsearchmodel.cpp
     )
 else()
     if(ANDROID)

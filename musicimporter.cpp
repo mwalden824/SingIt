@@ -14,19 +14,14 @@
 #include <sstream>
 #include <stdexcept>
 
-
-// ------------------------------------------------------------
-// Constructor / Destructor
-// ------------------------------------------------------------
-
 MusicImporter::MusicImporter(
     MusicDatabase& musicDatabase,
     const std::string& sourceDatabasePath,
     const std::string& csvPath,
     const std::string& musicDirectory,
-    ModelContext& model)
-    :
-    musicDatabase(musicDatabase),
+    SimSearchModel& model
+    )
+    : musicDatabase(musicDatabase),
     sourceDatabasePath(sourceDatabasePath),
     csvPath(csvPath),
     musicDirectory(musicDirectory),
@@ -37,53 +32,45 @@ MusicImporter::MusicImporter(
 MusicImporter::~MusicImporter()
 {
     closeSourceDatabase();
-
-    if (logFile.is_open())
-        logFile.close();
 }
 
-
 // ------------------------------------------------------------
-// Main import function
+// Main import
 // ------------------------------------------------------------
 
 void MusicImporter::importAll(
     const std::string& logPath)
 {
-    qDebug() << "Starting music import...";
+    logFile.open(logPath);
 
-    // Open log file in append mode so previous import history
-    // is preserved.
-    logFile.open(
-        logPath,
-        std::ios::out | std::ios::app);
-
-    if (!logFile)
+    if (!logFile.is_open())
     {
         throw std::runtime_error(
-            "Could not open import log: " + logPath);
+            "Could not open import log file: " +
+            logPath
+            );
     }
-
-    // Load Spotify CSV.
-    std::vector<CsvTrack> csvTracks =
-        loadCsvTracks();
-
-    qDebug()
-        << "Loaded"
-        << csvTracks.size()
-        << "tracks from CSV.";
-
-    // Open source LRCLIB database.
-    openSourceDatabase();
-
-    size_t processedCount = 0;
-    size_t noLyricsCount = 0;
-    size_t skippedCount = 0;
 
     try
     {
-        for (const auto& entry :
-             std::filesystem::directory_iterator(musicDirectory))
+        std::vector<CsvTrack> csvTracks =
+            loadCsvTracks();
+
+        qDebug()
+            << "Loaded"
+            << csvTracks.size()
+            << "CSV tracks.";
+
+        openSourceDatabase();
+
+        size_t importedCount = 0;
+        size_t skippedCount = 0;
+
+        for (
+            const auto& entry :
+            std::filesystem::directory_iterator(
+                musicDirectory
+                ))
         {
             if (!entry.is_regular_file())
                 continue;
@@ -92,229 +79,211 @@ void MusicImporter::importAll(
                 entry.path().filename().string();
 
             const std::string extension =
-                entry.path().extension().string();
+                toLower(
+                    entry.path().extension().string()
+                    );
 
-            if (extension != ".mp3" &&
-                extension != ".MP3")
-            {
+            if (extension != ".mp3")
                 continue;
-            }
 
-            qDebug()
-                << ""
-                << "Processing:"
-                << QString::fromStdString(filename);
+            const int fileNumber =
+                extractFileNumber(filename);
 
-            // ------------------------------------------------
-            // Extract five-digit CSV number.
-            // ------------------------------------------------
-
-            int fileNumber;
-
-            try
+            if (fileNumber < 0)
             {
-                fileNumber =
-                    extractFileNumber(filename);
-            }
-            catch (const std::exception& e)
-            {
-                qDebug()
-                << "Invalid filename:"
-                << e.what();
-
                 writeLog(
                     "INVALID_FILENAME",
                     -1,
                     filename,
                     "",
-                    "");
+                    "",
+                    0
+                    );
 
                 ++skippedCount;
                 continue;
             }
 
-            // ------------------------------------------------
-            // Convert file number to CSV index.
-            //
-            // Example:
-            // 00001-foo-bar.mp3 -> csvTracks[0]
-            // 00002-foo-bar.mp3 -> csvTracks[1]
-            // ------------------------------------------------
-
+            /*
+             * File names are expected to look like:
+             *
+             * 00001-something.mp3
+             * 00002-something.mp3
+             * etc.
+             *
+             * extractFileNumber() converts 00001 -> 0.
+             */
             const size_t csvIndex =
-                static_cast<size_t>(fileNumber - 1);
+                static_cast<size_t>(
+                    fileNumber
+                    );
 
             if (csvIndex >= csvTracks.size())
             {
-                qDebug()
-                << "CSV row out of range:"
-                << fileNumber;
-
                 writeLog(
-                    "INVALID_CSV_ROW",
+                    "CSV_INDEX_OUT_OF_RANGE",
                     fileNumber,
                     filename,
                     "",
-                    "");
+                    "",
+                    0
+                    );
 
                 ++skippedCount;
                 continue;
             }
 
-            const CsvTrack& csvTrack =
+            const CsvTrack& track =
                 csvTracks[csvIndex];
 
-            // ------------------------------------------------
-            // Find synced lyrics in LRCLIB.
-            // ------------------------------------------------
+            qDebug()
+                << "Processing:"
+                << QString::fromStdString(filename)
+                << "-"
+                << QString::fromStdString(track.trackName)
+                << "-"
+                << QString::fromStdString(track.artistName);
 
             LyricsResult lyricsResult =
                 findSyncedLyrics(
-                    csvTrack.trackName,
-                    csvTrack.artistName);
+                    track.trackName,
+                    track.artistName
+                    );
 
             if (lyricsResult.syncedLyrics.empty())
             {
-                qDebug()
-                << "No synced lyrics.";
-
                 writeLog(
-                    "NO_SYNCED_LYRICS",
+                    "NO_LYRICS",
                     fileNumber,
                     filename,
-                    csvTrack.trackName,
-                    csvTrack.artistName);
+                    track.trackName,
+                    track.artistName,
+                    0
+                    );
 
-                ++noLyricsCount;
+                ++skippedCount;
                 continue;
             }
 
-            // ------------------------------------------------
-            // Parse synchronized lyrics.
-            // ------------------------------------------------
-
             const int64_t trackDurationMs =
                 static_cast<int64_t>(
-                    lyricsResult.durationSeconds * 1000.0);
+                    std::llround(
+                        lyricsResult.durationSeconds *
+                        1000.0
+                        )
+                    );
 
             std::vector<ParsedLyric> lyrics =
                 parseSyncedLyrics(
                     lyricsResult.syncedLyrics,
-                    trackDurationMs);
+                    trackDurationMs
+                    );
 
             if (lyrics.empty())
             {
-                qDebug()
-                << "Synced lyrics contained no usable lines.";
-
                 writeLog(
-                    "NO_USABLE_LYRICS",
+                    "NO_PARSED_LYRICS",
                     fileNumber,
                     filename,
-                    csvTrack.trackName,
-                    csvTrack.artistName);
+                    track.trackName,
+                    track.artistName,
+                    0
+                    );
 
                 ++skippedCount;
                 continue;
             }
 
-            // ------------------------------------------------
-            // Add song to our database.
-            // ------------------------------------------------
-
-            const int64_t songId =
+            const int songId =
                 musicDatabase.addSong(
-                    csvTrack.artistName,
-                    csvTrack.trackName,
+                    track.trackName,
+                    track.artistName,
                     filename,
-                    fileNumber);
-
-            // ------------------------------------------------
-            // Add each lyric and its embedding.
-            // ------------------------------------------------
+                    fileNumber
+                    );
 
             for (const ParsedLyric& lyric : lyrics)
             {
-                const int64_t lyricId =
+                const int lyricId =
                     musicDatabase.addLyric(
                         songId,
                         lyric.startTimeMs,
                         lyric.stopTimeMs,
-                        lyric.text);
+                        lyric.text
+                        );
 
                 std::vector<float> embedding =
-                    createEmbedding(lyric.text);
+                    createEmbedding(
+                        lyric.text
+                        );
 
-                if (embedding.size() !=
-                    MusicDatabase::EmbeddingDimension)
+                if (embedding.empty())
                 {
                     throw std::runtime_error(
-                        "Embedding has incorrect dimension.");
+                        "Embedding vector is empty."
+                        );
                 }
 
                 musicDatabase.addEmbedding(
                     lyricId,
-                    embedding);
+                    embedding
+                    );
             }
-
-            // ------------------------------------------------
-            // IMPORTANT:
-            //
-            // Only write SUCCESS after the entire song has
-            // been processed.
-            // ------------------------------------------------
 
             writeLog(
                 "SUCCESS",
                 fileNumber,
                 filename,
-                csvTrack.trackName,
-                csvTrack.artistName,
-                lyrics.size());
+                track.trackName,
+                track.artistName,
+                lyrics.size()
+                );
 
-            ++processedCount;
-
-            qDebug()
-                << "Successfully processed:"
-                << QString::fromStdString(
-                       csvTrack.artistName)
-                << "-"
-                << QString::fromStdString(
-                       csvTrack.trackName);
+            ++importedCount;
         }
+
+        qDebug()
+            << "Import complete.";
+
+        qDebug()
+            << "Imported:"
+            << importedCount;
+
+        qDebug()
+            << "Skipped:"
+            << skippedCount;
     }
     catch (...)
     {
         closeSourceDatabase();
+
+        if (logFile.is_open())
+            logFile.close();
+
         throw;
     }
 
     closeSourceDatabase();
 
-    qDebug()
-        << ""
-        << "Import complete."
-        << "Processed:"
-        << processedCount
-        << "No lyrics:"
-        << noLyricsCount
-        << "Skipped:"
-        << skippedCount;
+    if (logFile.is_open())
+        logFile.close();
 }
 
-
 // ------------------------------------------------------------
-// CSV loading
+// CSV
 // ------------------------------------------------------------
 
-std::vector<CsvTrack> MusicImporter::loadCsvTracks() const
+std::vector<CsvTrack>
+MusicImporter::loadCsvTracks() const
 {
     std::ifstream file(csvPath);
 
-    if (!file)
+    if (!file.is_open())
     {
         throw std::runtime_error(
-            "Could not open CSV file: " + csvPath);
+            "Could not open CSV file: " +
+            csvPath
+            );
     }
 
     std::vector<CsvTrack> tracks;
@@ -324,13 +293,12 @@ std::vector<CsvTrack> MusicImporter::loadCsvTracks() const
     // Skip header.
     if (!std::getline(file, line))
     {
-        throw std::runtime_error(
-            "CSV file is empty.");
+        return tracks;
     }
 
     while (std::getline(file, line))
     {
-        if (line.empty())
+        if (trim(line).empty())
             continue;
 
         std::vector<std::string> fields =
@@ -347,38 +315,35 @@ std::vector<CsvTrack> MusicImporter::loadCsvTracks() const
         track.artistName =
             trim(fields[1]);
 
-        tracks.push_back(
-            std::move(track));
+        tracks.push_back(track);
     }
 
     return tracks;
 }
 
-
-// ------------------------------------------------------------
-// Basic CSV parser
-// ------------------------------------------------------------
-
-std::vector<std::string> MusicImporter::parseCsvLine(
+std::vector<std::string>
+MusicImporter::parseCsvLine(
     const std::string& line)
 {
     std::vector<std::string> fields;
 
-    std::string field;
+    std::string current;
+
     bool insideQuotes = false;
 
     for (size_t i = 0; i < line.size(); ++i)
     {
-        char c = line[i];
+        const char c = line[i];
 
         if (c == '"')
         {
-            if (insideQuotes &&
+            if (
+                insideQuotes &&
                 i + 1 < line.size() &&
-                line[i + 1] == '"')
+                line[i + 1] == '"'
+                )
             {
-                // Escaped quote: ""
-                field += '"';
+                current += '"';
                 ++i;
             }
             else
@@ -386,51 +351,73 @@ std::vector<std::string> MusicImporter::parseCsvLine(
                 insideQuotes = !insideQuotes;
             }
         }
-        else if (c == ',' && !insideQuotes)
+        else if (
+            c == ',' &&
+            !insideQuotes
+            )
         {
-            fields.push_back(field);
-            field.clear();
+            fields.push_back(current);
+            current.clear();
         }
         else
         {
-            field += c;
+            current += c;
         }
     }
 
-    fields.push_back(field);
+    fields.push_back(current);
 
     return fields;
 }
 
-
 // ------------------------------------------------------------
-// Extract five-digit number from filename
+// Files
 // ------------------------------------------------------------
 
 int MusicImporter::extractFileNumber(
     const std::string& filename)
 {
+    /*
+     * Expected:
+     *
+     * 00001-...
+     * 00002-...
+     *
+     * Convert:
+     *
+     * 00001 -> 0
+     * 00002 -> 1
+     */
+
     static const std::regex pattern(
-        R"(^(\d{5})-)");
+        R"(^(\d{5})-)"
+        );
 
     std::smatch match;
 
     if (!std::regex_search(
             filename,
             match,
-            pattern))
+            pattern
+            ))
     {
-        throw std::runtime_error(
-            "Filename does not begin with a five-digit number: "
-            + filename);
+        return -1;
     }
 
-    return std::stoi(match[1].str()) - 1;
+    try
+    {
+        return std::stoi(
+                   match[1].str()
+                   ) - 1;
+    }
+    catch (...)
+    {
+        return -1;
+    }
 }
 
-
 // ------------------------------------------------------------
-// LRCLIB source database
+// LRCLIB database
 // ------------------------------------------------------------
 
 void MusicImporter::openSourceDatabase()
@@ -438,34 +425,27 @@ void MusicImporter::openSourceDatabase()
     if (sourceDb != nullptr)
         return;
 
-    int result =
-        sqlite3_open_v2(
+    const int result =
+        sqlite3_open(
             sourceDatabasePath.c_str(),
-            &sourceDb,
-            SQLITE_OPEN_READONLY,
-            nullptr);
+            &sourceDb
+            );
 
     if (result != SQLITE_OK)
     {
         std::string error =
             sourceDb != nullptr
                 ? sqlite3_errmsg(sourceDb)
-                : "unknown SQLite error";
+                : "Unknown SQLite error";
 
-        if (sourceDb != nullptr)
-            sqlite3_close(sourceDb);
-
-        sourceDb = nullptr;
+        closeSourceDatabase();
 
         throw std::runtime_error(
-            "Could not open LRCLIB database: "
-            + error);
+            "Could not open source database: " +
+            error
+            );
     }
-
-    qDebug()
-        << "LRCLIB database opened.";
 }
-
 
 void MusicImporter::closeSourceDatabase()
 {
@@ -476,99 +456,92 @@ void MusicImporter::closeSourceDatabase()
     }
 }
 
-
-// ------------------------------------------------------------
-// Find synchronized lyrics
-// ------------------------------------------------------------
-
-LyricsResult MusicImporter::findSyncedLyrics(
+LyricsResult
+MusicImporter::findSyncedLyrics(
     const std::string& trackName,
     const std::string& artistName) const
 {
     if (sourceDb == nullptr)
     {
         throw std::runtime_error(
-            "LRCLIB database is not open.");
+            "Source database is not open."
+            );
     }
 
-    const char* sql = R"(
-        SELECT
-            l.synced_lyrics,
-            t.duration
-        FROM lyrics l
-        INNER JOIN tracks t
-            ON l.track_id = t.id
-        WHERE t.name_lower = ?
-          AND t.artist_name_lower = ?
-          AND l.has_synced_lyrics = 1
-          AND l.synced_lyrics IS NOT NULL
-          AND l.synced_lyrics != ''
-        ORDER BY l.id DESC
-        LIMIT 1;
-    )";
+    LyricsResult result;
+
+    result.durationSeconds = 0.0;
+
+    const char* sql =
+        "SELECT syncedLyrics, duration "
+        "FROM tracks "
+        "WHERE name = ? "
+        "AND artist = ? "
+        "LIMIT 1;";
 
     sqlite3_stmt* statement = nullptr;
 
-    int result =
+    int rc =
         sqlite3_prepare_v2(
             sourceDb,
             sql,
             -1,
             &statement,
-            nullptr);
+            nullptr
+            );
 
-    if (result != SQLITE_OK)
+    if (rc != SQLITE_OK)
     {
         throw std::runtime_error(
             "Could not prepare LRCLIB query: " +
             std::string(
-                sqlite3_errmsg(sourceDb)));
+                sqlite3_errmsg(sourceDb)
+                )
+            );
     }
-
-    const std::string trackNameLower =
-        toLower(trackName);
-
-    const std::string artistNameLower =
-        toLower(artistName);
 
     sqlite3_bind_text(
         statement,
         1,
-        trackNameLower.c_str(),
+        trackName.c_str(),
         -1,
-        SQLITE_TRANSIENT);
+        SQLITE_TRANSIENT
+        );
 
     sqlite3_bind_text(
         statement,
         2,
-        artistNameLower.c_str(),
+        artistName.c_str(),
         -1,
-        SQLITE_TRANSIENT);
+        SQLITE_TRANSIENT
+        );
 
-    LyricsResult resultData;
+    rc =
+        sqlite3_step(statement);
 
-    result = sqlite3_step(statement);
-
-    if (result == SQLITE_ROW)
+    if (rc == SQLITE_ROW)
     {
         const unsigned char* lyrics =
             sqlite3_column_text(
                 statement,
-                0);
+                0
+                );
 
         if (lyrics != nullptr)
         {
-            resultData.syncedLyrics =
-                reinterpret_cast<const char*>(
-                    lyrics);
+            result.syncedLyrics =
+                reinterpret_cast<
+                    const char*
+                    >(lyrics);
         }
 
-        resultData.durationSeconds =
+        result.durationSeconds =
             sqlite3_column_double(
                 statement,
-                1);
+                1
+                );
     }
-    else if (result != SQLITE_DONE)
+    else if (rc != SQLITE_DONE)
     {
         std::string error =
             sqlite3_errmsg(sourceDb);
@@ -576,146 +549,248 @@ LyricsResult MusicImporter::findSyncedLyrics(
         sqlite3_finalize(statement);
 
         throw std::runtime_error(
-            "LRCLIB query failed: " + error);
+            "Error executing LRCLIB query: " +
+            error
+            );
     }
 
     sqlite3_finalize(statement);
 
-    return resultData;
+    return result;
 }
 
-
 // ------------------------------------------------------------
-// Timestamp parsing
+// Lyrics
 // ------------------------------------------------------------
 
 int64_t MusicImporter::parseTimestampMs(
     const std::string& timestamp)
 {
-    const size_t colon =
-        timestamp.find(':');
+    /*
+     * Expected:
+     *
+     * [mm:ss.xx]
+     *
+     * Examples:
+     *
+     * [00:12.34]
+     * [03:45.67]
+     */
 
-    if (colon == std::string::npos)
+    static const std::regex pattern(
+        R"(\[(\d+):(\d+(?:\.\d+)?)\])"
+        );
+
+    std::smatch match;
+
+    if (!std::regex_match(
+            timestamp,
+            match,
+            pattern
+            ))
     {
-        throw std::runtime_error(
-            "Invalid lyric timestamp: " +
-            timestamp);
+        return -1;
     }
 
-    const int minutes =
-        std::stoi(
-            timestamp.substr(0, colon));
+    try
+    {
+        const int64_t minutes =
+            std::stoll(
+                match[1].str()
+                );
 
-    const double seconds =
-        std::stod(
-            timestamp.substr(colon + 1));
+        const double seconds =
+            std::stod(
+                match[2].str()
+                );
 
-    return static_cast<int64_t>(
-        minutes * 60000 +
-        seconds * 1000.0);
+        return
+            minutes * 60'000 +
+            static_cast<int64_t>(
+                std::llround(
+                    seconds * 1000.0
+                    )
+                );
+    }
+    catch (...)
+    {
+        return -1;
+    }
 }
-
-
-// ------------------------------------------------------------
-// Parse LRC synchronized lyrics
-// ------------------------------------------------------------
 
 std::vector<ParsedLyric>
 MusicImporter::parseSyncedLyrics(
     const std::string& syncedLyrics,
     int64_t trackDurationMs)
 {
-    std::vector<ParsedLyric> lyrics;
+    std::vector<ParsedLyric> result;
 
-    std::stringstream stream(
-        syncedLyrics);
+    std::istringstream stream(
+        syncedLyrics
+        );
 
     std::string line;
 
-    static const std::regex pattern(
-        R"(^\[([0-9]+:[0-9]+(?:\.[0-9]+)?)\]\s*(.*)$)");
+    struct TimestampedLine
+    {
+        int64_t startTimeMs;
+        std::string text;
+    };
+
+    std::vector<TimestampedLine> lines;
 
     while (std::getline(stream, line))
     {
-        // Handle Windows CRLF line endings.
-        if (!line.empty() &&
-            line.back() == '\r')
-        {
-            line.pop_back();
-        }
+        line = trim(line);
 
-        std::smatch match;
-
-        if (!std::regex_match(
-                line,
-                match,
-                pattern))
-        {
+        if (line.empty())
             continue;
+
+        /*
+         * A line can contain multiple timestamps:
+         *
+         * [00:10.00][00:20.00]Some lyric
+         *
+         * Extract all timestamps from the
+         * beginning of the line.
+         */
+
+        static const std::regex timestampPattern(
+            R"(\[(\d+:\d+(?:\.\d+)?)\])"
+            );
+
+        std::sregex_iterator begin(
+            line.begin(),
+            line.end(),
+            timestampPattern
+            );
+
+        std::sregex_iterator end;
+
+        if (begin == end)
+            continue;
+
+        std::string lyricText;
+
+        const std::smatch& firstMatch =
+            *begin;
+
+        lyricText =
+            line.substr(
+                firstMatch.position() +
+                firstMatch.length()
+                );
+
+        lyricText =
+            trim(lyricText);
+
+        for (
+            auto it = begin;
+            it != end;
+            ++it)
+        {
+            const std::string timestamp =
+                (*it)[1].str();
+
+            const int64_t startTimeMs =
+                parseTimestampMs(
+                    timestamp
+                    );
+
+            if (startTimeMs < 0)
+                continue;
+
+            lines.push_back(
+                {
+                    startTimeMs,
+                    lyricText
+                }
+                );
+        }
+    }
+
+    std::sort(
+        lines.begin(),
+        lines.end(),
+        [](const TimestampedLine& a,
+           const TimestampedLine& b)
+        {
+            return
+                a.startTimeMs <
+                b.startTimeMs;
+        }
+        );
+
+    for (size_t i = 0;
+         i < lines.size();
+         ++i)
+    {
+        const int64_t startTimeMs =
+            lines[i].startTimeMs;
+
+        int64_t stopTimeMs;
+
+        if (i + 1 < lines.size())
+        {
+            stopTimeMs =
+                lines[i + 1].startTimeMs;
+        }
+        else
+        {
+            stopTimeMs =
+                trackDurationMs;
         }
 
-        const std::string timestamp =
-            match[1].str();
-
-        const std::string text =
-            trim(match[2].str());
-
-        // Ignore timestamp-only lines.
-        if (text.empty())
+        if (stopTimeMs <= startTimeMs)
             continue;
 
         ParsedLyric lyric;
 
         lyric.startTimeMs =
-            parseTimestampMs(timestamp);
+            startTimeMs;
 
-        lyric.stopTimeMs = 0;
+        lyric.stopTimeMs =
+            stopTimeMs;
 
-        lyric.text = text;
+        lyric.text =
+            lines[i].text;
 
-        lyrics.push_back(
-            std::move(lyric));
+        if (trim(lyric.text).empty())
+            continue;
+
+        result.push_back(
+            lyric
+            );
     }
 
-    // Each lyric ends when the next lyric begins.
-    for (size_t i = 0;
-         i + 1 < lyrics.size();
-         ++i)
-    {
-        lyrics[i].stopTimeMs =
-            lyrics[i + 1].startTimeMs;
-    }
-
-    // Last lyric ends at the track duration.
-    if (!lyrics.empty())
-    {
-        lyrics.back().stopTimeMs =
-            trackDurationMs;
-    }
-
-    return lyrics;
+    return result;
 }
 
-
 // ------------------------------------------------------------
-// Create embedding
+// Embeddings
 // ------------------------------------------------------------
 
 std::vector<float>
 MusicImporter::createEmbedding(
     const std::string& lyricText)
 {
-    // Do not use the verbose tokenizeString() here.
-    // This importer may process thousands of lyric lines.
+    /*
+     * SimSearchModel owns the tokenizer and
+     * ONNX Runtime session.
+     *
+     * MusicImporter should not access those
+     * implementation details directly.
+     */
 
     std::vector<int32_t> tokenIds =
-        model.tokenizer->Encode(lyricText);
+        model.tokenizeString(
+            lyricText
+            );
 
-    return MainWindow::calculateEmbeddingVector(
-        model.session,
-        tokenIds);
+    return model.calculateEmbeddingVector(
+        tokenIds
+        );
 }
-
 
 // ------------------------------------------------------------
 // Logging
@@ -736,36 +811,45 @@ void MusicImporter::writeLog(
         std::chrono::system_clock::now();
 
     const std::time_t time =
-        std::chrono::system_clock::to_time_t(now);
+        std::chrono::system_clock::to_time_t(
+            now
+            );
+
+    std::tm localTime{};
+
+#ifdef _WIN32
+    localtime_s(
+        &localTime,
+        &time
+        );
+#else
+    localtime_r(
+        &time,
+        &localTime
+        );
+#endif
 
     logFile
         << std::put_time(
-               std::localtime(&time),
-               "%Y-%m-%d %H:%M:%S")
+               &localTime,
+               "%Y-%m-%d %H:%M:%S"
+               )
         << " | "
         << status
-        << " | CSV="
+        << " | FileNumber="
         << fileNumber
-        << " | "
+        << " | Filename="
         << filename
-        << " | "
+        << " | Track="
+        << trackName
+        << " | Artist="
         << artistName
-        << " | "
-        << trackName;
+        << " | Lyrics="
+        << lyricCount
+        << '\n';
 
-    if (lyricCount > 0)
-    {
-        logFile
-            << " | lyrics="
-            << lyricCount;
-    }
-
-    logFile << '\n';
-
-    // Make sure the result is written immediately.
     logFile.flush();
 }
-
 
 // ------------------------------------------------------------
 // Utility
@@ -774,7 +858,8 @@ void MusicImporter::writeLog(
 std::string MusicImporter::toLower(
     const std::string& value)
 {
-    std::string result = value;
+    std::string result =
+        value;
 
     std::transform(
         result.begin(),
@@ -783,37 +868,42 @@ std::string MusicImporter::toLower(
         [](unsigned char c)
         {
             return static_cast<char>(
-                std::tolower(c));
-        });
+                std::tolower(c)
+                );
+        }
+        );
 
     return result;
 }
 
-
 std::string MusicImporter::trim(
     const std::string& value)
 {
-    size_t start = 0;
+    const auto first =
+        std::find_if(
+            value.begin(),
+            value.end(),
+            [](unsigned char c)
+            {
+                return !std::isspace(c);
+            }
+            );
 
-    while (start < value.size() &&
-           std::isspace(
-               static_cast<unsigned char>(
-                   value[start])))
-    {
-        ++start;
-    }
+    if (first == value.end())
+        return {};
 
-    size_t end = value.size();
+    const auto last =
+        std::find_if(
+            value.rbegin(),
+            value.rend(),
+            [](unsigned char c)
+            {
+                return !std::isspace(c);
+            }
+            ).base();
 
-    while (end > start &&
-           std::isspace(
-               static_cast<unsigned char>(
-                   value[end - 1])))
-    {
-        --end;
-    }
-
-    return value.substr(
-        start,
-        end - start);
+    return std::string(
+        first,
+        last
+        );
 }
