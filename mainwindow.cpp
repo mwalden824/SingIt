@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-// #include "musicimporter.h"
 
 #include <QDebug>
 #include <QCoreApplication>
@@ -15,7 +14,7 @@ MainWindow::MainWindow(QWidget *parent)
       ui(new Ui::MainWindow),
       model(nullptr),
       musicDatabase(
-          "C:/Walden/Projects/MusicApp/SingIt/music.db"
+          "music.db"
           ),
       mediaPlayer(new QMediaPlayer(this)),
       audioOutput(new QAudioOutput(this)),
@@ -26,7 +25,6 @@ MainWindow::MainWindow(QWidget *parent)
     mediaPlayer->setAudioOutput(
         audioOutput
         );
-
 
     // --------------------------------------------------------
     // Stop playback at requested stop time
@@ -141,7 +139,7 @@ void MainWindow::on_searchButton_clicked()
         // Display search results
         // ----------------------------------------------------
 
-        for (SearchResult res : results)
+        for (const SearchResult& res : results)
         {
             qDebug()
                 << "Artist: "
@@ -190,30 +188,17 @@ void MainWindow::on_searchButton_clicked()
         // ----------------------------------------------------
 
         QString fullPath =
-            "C:/Walden/Projects/MusicApp/music/allMusic/" +
+            "music/" +
             QString::fromStdString(
                 result.filename
                 );
-
 
         // ----------------------------------------------------
         // Play matching lyric section
         // ----------------------------------------------------
 
-        // playMp3Section(
-        //     fullPath,
-        //     static_cast<int>(
-        //         result.startTimeMs
-        //         ),
-        //     static_cast<int>(
-        //         result.stopTimeMs
-        //         )
-        //     );
-
         const int paddingMs = 2000; // 2 seconds
 
-        // const int songDurationMs =
-        //     static_cast<int>(mediaPlayer->duration());
         const int songLength =
             getMp3Duration(fullPath);
 
@@ -262,20 +247,16 @@ void MainWindow::playMp3Section(
         return;
     }
 
-
     mediaPlayer->stop();
-
 
     playbackStopTime =
         stopTimeMs;
-
 
     mediaPlayer->setSource(
         QUrl::fromLocalFile(
             filename
             )
         );
-
 
     // --------------------------------------------------------
     // Wait until media has loaded
@@ -302,25 +283,9 @@ void MainWindow::playMp3Section(
         QThread::msleep(10);
     }
 
-
-    qDebug()
-        << "Media loaded.";
-
-
-    qDebug()
-        << "Seeking to:"
-        << startTimeMs;
-
-
     mediaPlayer->setPosition(
         startTimeMs
         );
-
-
-    qDebug()
-        << "Position after seek:"
-        << mediaPlayer->position();
-
 
     mediaPlayer->play();
 }

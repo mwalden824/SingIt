@@ -77,13 +77,38 @@ target_link_options(SingIt PRIVATE
 
 # Copy ONNX Runtime DLL next to the executable after building
 if(WIN32)
+    set(WINDEPLOYQT
+        "C:/Qt/6.11.2/mingw_64/bin/windeployqt.exe"
+    )
+
     add_custom_command(TARGET SingIt POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/third_party"
+            "$<TARGET_FILE_DIR:SingIt>/third_party"
+
+        COMMAND "${WINDEPLOYQT}"
+            --no-translations
+            "$<TARGET_FILE:SingIt>"
+
+        COMMENT "Deploying Qt dependencies..."
+
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_SOURCE_DIR}/models"
+                "$<TARGET_FILE_DIR:SingIt>/models"
+
+        COMMENT "Deploying Qt dependencies and application files..."
+
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_SOURCE_DIR}/../music/allMusic"
+                "$<TARGET_FILE_DIR:SingIt>/music"
+
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/third_party/onnxruntime/lib/onnxruntime.dll"
-            "$<TARGET_FILE_DIR:SingIt>"
+            "${CMAKE_SOURCE_DIR}/music.db"
+            "$<TARGET_FILE_DIR:SingIt>/music.db"
+
+        COMMENT "Copying mp3 songs to build directory..."
     )
 endif()
-
 
 # ============================================================
 # Application properties

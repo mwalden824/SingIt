@@ -96,7 +96,7 @@ void MusicDatabase::loadSqliteVec()
 
     int result = sqlite3_load_extension(
         db,
-        "C:\\Walden\\Projects\\MusicApp\\SingIt\\third_party\\sqlite-vec\\vec0",
+        "third_party/sqlite-vec/vec0",
         nullptr,
         &errorMessage
         );
