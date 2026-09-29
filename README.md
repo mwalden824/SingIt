@@ -4,7 +4,7 @@
 
 Instead of searching for:
 
-> "I'm feeling lonely"
+> "You're taking me out of the ordinary"
 
 and requiring those exact words to appear in a lyric, SingIt can use semantic similarity to find lyrics expressing a similar idea—even when completely different words are used.
 
@@ -177,13 +177,13 @@ The model converts text into a numerical vector representing its semantic meanin
 For example, phrases such as:
 
 ```text
-"I am completely alone"
+"There is some crazy person on my lawn"
 ```
 
 and:
 
 ```text
-"I have nobody by my side"
+"The lunatic is on the grass..."
 ```
 
 can produce vectors that are close to one another even though the words are substantially different.
