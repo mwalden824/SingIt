@@ -29,6 +29,7 @@ SimSearchModel::SimSearchModel()
 SimSearchModel::ModelContext
 SimSearchModel::initONNXRuntimeAndTokenizer()
 {
+
     // --------------------------------------------------------
     // Read tokenizer.json into memory
     // --------------------------------------------------------

@@ -3,7 +3,9 @@
 
 #include <QDebug>
 #include <QCoreApplication>
-
+#include <QFileDialog>
+#include <QSettings>
+#include <QDir>
 
 // ============================================================
 // MainWindow
@@ -66,11 +68,35 @@ MainWindow::MainWindow(QWidget *parent)
     }
 }
 
+// ============================================================
+// Music Library Selection Menu Item
+// ============================================================
+void MainWindow::on_actionMusicLibraryFolder_triggered()
+{
+    QSettings settings;
+
+    QString currentPath = settings.value(
+                                      "musicLibraryPath",
+                                      QDir::homePath()
+                                      ).toString();
+
+    QString selectedPath = QFileDialog::getExistingDirectory(
+        this,
+        "Select Music Library Folder",
+        currentPath,
+        QFileDialog::ShowDirsOnly |
+            QFileDialog::DontResolveSymlinks
+        );
+
+    if (selectedPath.isEmpty())
+        return;
+
+    settings.setValue("musicLibraryPath", selectedPath);
+}
 
 // ============================================================
 // Search Button
 // ============================================================
-
 void MainWindow::on_searchButton_clicked()
 {
     const QString text =
@@ -188,11 +214,12 @@ void MainWindow::on_searchButton_clicked()
         // ----------------------------------------------------
 
         QString fullPath =
-            "music/" +
+            getMusicLibraryPath() + "/" +
             QString::fromStdString(
                 result.filename
                 );
 
+        qDebug() << fullPath;
         // ----------------------------------------------------
         // Play matching lyric section
         // ----------------------------------------------------
@@ -321,6 +348,13 @@ int MainWindow::getMp3Duration(
     return static_cast<int>(
         player.duration()
         );
+}
+
+QString MainWindow::getMusicLibraryPath() const
+{
+    QSettings settings;
+
+    return settings.value("musicLibraryPath").toString();
 }
 
 // ============================================================

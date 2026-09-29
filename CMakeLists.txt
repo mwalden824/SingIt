@@ -98,15 +98,15 @@ if(WIN32)
 
         COMMENT "Deploying Qt dependencies and application files..."
 
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-                "${CMAKE_SOURCE_DIR}/../music/allMusic"
-                "$<TARGET_FILE_DIR:SingIt>/music"
-
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_SOURCE_DIR}/music.db"
             "$<TARGET_FILE_DIR:SingIt>/music.db"
 
-        COMMENT "Copying mp3 songs to build directory..."
+        COMMENT "Copying music database to build directory..."
+
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_SOURCE_DIR}/third_party/onnxruntime/lib/onnxruntime.dll"
+            "$<TARGET_FILE_DIR:SingIt>/onnxruntime.dll"
     )
 endif()
 

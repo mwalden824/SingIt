@@ -35,7 +35,7 @@ public:
 private slots:
 
     void on_searchButton_clicked();
-
+    void on_actionMusicLibraryFolder_triggered();
 
 private:
 
@@ -59,6 +59,8 @@ private:
         int startTimeMs,
         int stopTimeMs
         );
+
+    QString getMusicLibraryPath() const;
 };
 
 #endif // MAINWINDOW_H
