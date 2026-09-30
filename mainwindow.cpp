@@ -6,6 +6,7 @@
 #include <QFileDialog>
 #include <QSettings>
 #include <QDir>
+// #include <onnxruntime_cxx_api.h>
 
 // ============================================================
 // MainWindow
@@ -57,6 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
         musicDatabase.initialize();
+        inspectWhisperModels();
     }
     catch (const std::exception& e)
     {
@@ -355,6 +357,105 @@ QString MainWindow::getMusicLibraryPath() const
     QSettings settings;
 
     return settings.value("musicLibraryPath").toString();
+}
+
+void MainWindow::inspectWhisperModels()
+{
+    const std::wstring encoderPath =
+        L"models/whisper/onnx/encoder_model.onnx";
+
+    const std::wstring decoderPath =
+        L"models/whisper/onnx/decoder_model.onnx";
+
+    Ort::Env env(
+        ORT_LOGGING_LEVEL_WARNING,
+        "WhisperInspection"
+        );
+
+    Ort::SessionOptions sessionOptions;
+
+    Ort::Session encoderSession(
+        env,
+        encoderPath.c_str(),
+        sessionOptions
+        );
+
+    Ort::Session decoderSession(
+        env,
+        decoderPath.c_str(),
+        sessionOptions
+        );
+
+    auto inspectSession =
+        [](const char* name, Ort::Session& session)
+    {
+        qDebug() << "\n====" << name << "====";
+
+        Ort::AllocatorWithDefaultOptions allocator;
+
+        size_t inputCount = session.GetInputCount();
+
+        qDebug() << "Inputs:" << inputCount;
+
+        for (size_t i = 0; i < inputCount; ++i)
+        {
+            auto inputName = session.GetInputNameAllocated(
+                i,
+                allocator
+                );
+
+            auto typeInfo = session.GetInputTypeInfo(i);
+
+            auto tensorInfo =
+                typeInfo.GetTensorTypeAndShapeInfo();
+
+            auto shape = tensorInfo.GetShape();
+
+            qDebug() << "Input" << i
+                     << ":" << inputName.get();
+
+            qDebug() << "  Type:"
+                     << tensorInfo.GetElementType();
+
+            qDebug() << "  Shape:";
+
+            for (auto dimension : shape)
+                qDebug() << "   " << dimension;
+        }
+
+        size_t outputCount = session.GetOutputCount();
+
+        qDebug() << "Outputs:" << outputCount;
+
+        for (size_t i = 0; i < outputCount; ++i)
+        {
+            auto outputName = session.GetOutputNameAllocated(
+                i,
+                allocator
+                );
+
+            auto typeInfo = session.GetOutputTypeInfo(i);
+
+            auto tensorInfo =
+                typeInfo.GetTensorTypeAndShapeInfo();
+
+            auto shape = tensorInfo.GetShape();
+
+            qDebug() << "Output" << i
+                     << ":" << outputName.get();
+
+            qDebug() << "  Type:"
+                     << tensorInfo.GetElementType();
+
+            qDebug() << "  Shape:";
+
+            for (auto dimension : shape)
+                qDebug() << "   " << dimension;
+        }
+    };
+
+    inspectSession("WHISPER ENCODER", encoderSession);
+    inspectSession("WHISPER DECODER", decoderSession);
 }
 
 // ============================================================

@@ -61,6 +61,8 @@ private:
         );
 
     QString getMusicLibraryPath() const;
+    void inspectWhisperModels();
+
 };
 
 #endif // MAINWINDOW_H

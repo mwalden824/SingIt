@@ -19,6 +19,8 @@ set(PROJECT_SOURCES
         mainwindow.ui
         musicdatabase.h
         musicdatabase.cpp
+        whisperspeechrecognizer.cpp
+        whisperspeechrecognizer.h
         third_party/sqlite/sqlite3.c
 )
 
@@ -29,6 +31,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         musicdatabase.h musicdatabase.cpp
         musicimporter.h musicimporter.cpp
         simsearchmodel.h simsearchmodel.cpp
+        whisperspeechrecognizer.h whisperspeechrecognizer.cpp
     )
 else()
     if(ANDROID)
