@@ -5,9 +5,12 @@
 #include <QMediaPlayer>
 #include <QAudioOutput>
 #include <QThread>
+#include <QTimer>
 
 #include "musicdatabase.h"
 #include "simsearchmodel.h"
+#include "microphonerecorder.h"
+#include "whisperspeechrecognizer.h"
 
 #include <memory>
 
@@ -35,6 +38,8 @@ public:
 private slots:
 
     void on_searchButton_clicked();
+    void on_speakButton_clicked();
+    void stopVoiceRecording();
     void on_actionMusicLibraryFolder_triggered();
 
 private:
@@ -62,7 +67,11 @@ private:
 
     QString getMusicLibraryPath() const;
     void inspectWhisperModels();
+    void queryDatabaseAndPlayClip(QString text);
+    std::unique_ptr<MicrophoneRecorder> microphoneRecorder_;
+    std::unique_ptr<WhisperSpeechRecognizer> whisperRecognizer_;
 
+    QTimer voiceRecordingTimer_;
 };
 
 #endif // MAINWINDOW_H

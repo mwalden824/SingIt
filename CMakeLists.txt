@@ -21,6 +21,8 @@ set(PROJECT_SOURCES
         musicdatabase.cpp
         whisperspeechrecognizer.cpp
         whisperspeechrecognizer.h
+        microphonerecorder.h
+        microphonerecorder.cpp
         third_party/sqlite/sqlite3.c
 )
 
@@ -32,6 +34,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         musicimporter.h musicimporter.cpp
         simsearchmodel.h simsearchmodel.cpp
         whisperspeechrecognizer.h whisperspeechrecognizer.cpp
+        microphonerecorder.h microphonerecorder.cpp
     )
 else()
     if(ANDROID)
@@ -101,9 +104,9 @@ if(WIN32)
 
         COMMENT "Deploying Qt dependencies and application files..."
 
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_SOURCE_DIR}/music.db"
-            "$<TARGET_FILE_DIR:SingIt>/music.db"
+        # COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        #     "${CMAKE_SOURCE_DIR}/music.db"
+        #     "$<TARGET_FILE_DIR:SingIt>/music.db"
 
         COMMENT "Copying music database to build directory..."
 

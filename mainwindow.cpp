@@ -6,7 +6,11 @@
 #include <QFileDialog>
 #include <QSettings>
 #include <QDir>
-// #include <onnxruntime_cxx_api.h>
+#include <QApplication>
+
+// #include <iostream>
+#include <string>
+#include <vector>
 
 // ============================================================
 // MainWindow
@@ -58,7 +62,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
         musicDatabase.initialize();
-        inspectWhisperModels();
+        // inspectWhisperModels();
     }
     catch (const std::exception& e)
     {
@@ -68,6 +72,20 @@ MainWindow::MainWindow(QWidget *parent)
         qDebug()
             << e.what();
     }
+
+    microphoneRecorder_ =
+        std::make_unique<MicrophoneRecorder>(this);
+
+    whisperRecognizer_ =
+        std::make_unique<WhisperSpeechRecognizer>();
+
+    voiceRecordingTimer_.setSingleShot(true);
+
+    connect(
+        &voiceRecordingTimer_,
+        &QTimer::timeout,
+        this,
+        &MainWindow::stopVoiceRecording);
 }
 
 // ============================================================
@@ -97,6 +115,83 @@ void MainWindow::on_actionMusicLibraryFolder_triggered()
 }
 
 // ============================================================
+// Speak Button
+// ============================================================
+void MainWindow::on_speakButton_clicked()
+{
+    if (ui->speakButton->isChecked())
+    {
+        // Start recording
+        if (!microphoneRecorder_->start())
+        {
+            ui->speakButton->setChecked(false);
+
+            qWarning() << "Could not start microphone.";
+            return;
+        }
+
+        qDebug() << "Voice recording started.";
+
+        // Maximum recording time: 15 seconds
+        voiceRecordingTimer_.start(15000);
+
+        return;
+    }
+
+    // User pressed the button again.
+    stopVoiceRecording();
+}
+
+void MainWindow::stopVoiceRecording()
+{
+    // Make sure the timer can't fire again.
+    voiceRecordingTimer_.stop();
+
+    if (!microphoneRecorder_->isRecording())
+    {
+        ui->speakButton->setChecked(false);
+        return;
+    }
+
+    std::vector<float> audio =
+        microphoneRecorder_->stop();
+
+    ui->speakButton->setChecked(false);
+
+    if (audio.empty())
+    {
+        qWarning() << "No audio was recorded.";
+        return;
+    }
+
+    qDebug() << "Recorded"
+             << audio.size()
+             << "samples.";
+
+    try
+    {
+        std::string transcription =
+            whisperRecognizer_->transcribeAudio(audio);
+
+        qDebug() << "Transcription:"
+                 << QString::fromStdString(transcription);
+
+        // Pass transcription to your next function here.
+        //
+        // For example:
+        //
+        // performTextSearch(transcription);
+        ui->searchText->setPlainText(QString::fromStdString(transcription));
+        queryDatabaseAndPlayClip(QString::fromStdString(transcription));
+    }
+    catch (const std::exception& e)
+    {
+        qCritical() << "Voice transcription failed:"
+                    << e.what();
+    }
+}
+
+// ============================================================
 // Search Button
 // ============================================================
 void MainWindow::on_searchButton_clicked()
@@ -108,8 +203,12 @@ void MainWindow::on_searchButton_clicked()
     if (text.isEmpty())
         return;
 
+    queryDatabaseAndPlayClip(text);
+}
 
-    try
+void MainWindow::queryDatabaseAndPlayClip(QString text)
+{
+   try
     {
         // ----------------------------------------------------
         // Convert Qt string to std::string

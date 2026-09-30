@@ -583,8 +583,17 @@ WhisperSpeechRecognizer::createMelSpectrogram(
         copyCount,
         audio.begin());
 
+    qDebug() << "createMelSpectrogram: input size:"
+             << inputAudio.size();
+
+    qDebug() << "createMelSpectrogram: creating filter bank...";
+
     const auto filterBank =
         createMelFilterBank();
+
+    qDebug() << "createMelSpectrogram: filter bank created.";
+
+    qDebug() << "createMelSpectrogram: starting FFT frames...";
 
     constexpr int NumFrequencies =
         FFTSize / 2 + 1;
@@ -1002,18 +1011,18 @@ WhisperSpeechRecognizer::transcribeWav(
     // tokenizers-cpp decoding.
     std::vector<int32_t> decodeTokenIds;
 
-    decodeTokenIds.reserve(tokens.size());
-
-    for (int64_t token : tokens)
+    if (tokens.size() > 2)
     {
-        decodeTokenIds.push_back(
-            static_cast<int32_t>(token));
+        decodeTokenIds.reserve(tokens.size() - 2);
+
+        for (size_t i = 2; i < tokens.size(); ++i)
+        {
+            decodeTokenIds.push_back(
+                static_cast<int32_t>(tokens[i]));
+        }
     }
 
-    std::string result =
-        decodeTokens(decodeTokenIds);
-
-    return result;
+    return decodeTokens(decodeTokenIds);
 }
 
 
@@ -1065,12 +1074,15 @@ std::string WhisperSpeechRecognizer::transcribeAudio(
 
     std::vector<int32_t> decodeTokenIds;
 
-    decodeTokenIds.reserve(tokens.size());
-
-    for (int64_t token : tokens)
+    if (tokens.size() > 2)
     {
-        decodeTokenIds.push_back(
-            static_cast<int32_t>(token));
+        decodeTokenIds.reserve(tokens.size() - 2);
+
+        for (size_t i = 2; i < tokens.size(); ++i)
+        {
+            decodeTokenIds.push_back(
+                static_cast<int32_t>(tokens[i]));
+        }
     }
 
     return decodeTokens(decodeTokenIds);
