@@ -10,7 +10,6 @@ struct SearchResult
     std::string artist;
     std::string trackName;
     std::string filename;
-    int fileNumber;
 
     int64_t startTimeMs;
     int64_t stopTimeMs;
@@ -36,8 +35,7 @@ public:
     int64_t addSong(
         const std::string& artist,
         const std::string& trackName,
-        const std::string& filename,
-        int fileNumber
+        const std::string& filename
         );
 
     int64_t addLyric(

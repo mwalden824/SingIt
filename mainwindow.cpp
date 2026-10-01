@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "optionsdialog.h"
 
 #include <QDebug>
 #include <QCoreApplication>
@@ -8,7 +9,6 @@
 #include <QDir>
 #include <QApplication>
 
-// #include <iostream>
 #include <string>
 #include <vector>
 
@@ -89,29 +89,17 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 // ============================================================
-// Music Library Selection Menu Item
+// Options Menu Item
 // ============================================================
-void MainWindow::on_actionMusicLibraryFolder_triggered()
+void MainWindow::on_actionOptions_triggered()
 {
-    QSettings settings;
+    OptionsDialog dialog(musicDatabase, *model, this);
+    dialog.exec();
+}
 
-    QString currentPath = settings.value(
-                                      "musicLibraryPath",
-                                      QDir::homePath()
-                                      ).toString();
-
-    QString selectedPath = QFileDialog::getExistingDirectory(
-        this,
-        "Select Music Library Folder",
-        currentPath,
-        QFileDialog::ShowDirsOnly |
-            QFileDialog::DontResolveSymlinks
-        );
-
-    if (selectedPath.isEmpty())
-        return;
-
-    settings.setValue("musicLibraryPath", selectedPath);
+void MainWindow::on_actionExit_triggered()
+{
+    close();
 }
 
 // ============================================================
@@ -279,10 +267,6 @@ void MainWindow::queryDatabaseAndPlayClip(QString text)
             qDebug()
                 << "File Name: "
                 << res.filename;
-
-            qDebug()
-                << "File Number: "
-                << res.fileNumber;
 
             qDebug()
                 << "Start Time (ms): "

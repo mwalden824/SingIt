@@ -36,11 +36,12 @@ public:
 
 
 private slots:
-
+    void on_actionOptions_triggered();
+    void on_actionExit_triggered();
     void on_searchButton_clicked();
     void on_speakButton_clicked();
     void stopVoiceRecording();
-    void on_actionMusicLibraryFolder_triggered();
+    // void on_actionMusicLibraryFolder_triggered();
 
 private:
 
