@@ -1,6 +1,7 @@
 #include "optionsdialog.h"
 #include "ui_optionsdialog.h"
-#include "musicimporter.h"
+
+#include "importprogressdialog.h"
 
 #include <QApplication>
 #include <QFileDialog>
@@ -151,44 +152,15 @@ void OptionsDialog::on_importButton_clicked()
     // even if the user later closes the dialog with Cancel.
     saveSettings();
 
-    ui->importButton->setEnabled(false);
+    // Open the progress dialog.
+    ImportProgressDialog dialog(
+        musicDatabase,
+        model,
+        lrclibDatabase,
+        musicDirectory,
+        this);
 
-    QApplication::setOverrideCursor(Qt::WaitCursor);
-
-    try
-    {
-        MusicImporter importer(
-            musicDatabase,
-            lrclibDatabase.toStdString(),
-            musicDirectory.toStdString(),
-            model);
-
-        importer.importAll("import.log");
-
-        QMessageBox::information(
-            this,
-            tr("Import Complete"),
-            tr("The music import has completed."));
-    }
-    catch (const std::exception& e)
-    {
-        QMessageBox::critical(
-            this,
-            tr("Import Error"),
-            QString("The import failed:\n\n%1")
-                .arg(QString::fromStdString(e.what())));
-    }
-    catch (...)
-    {
-        QMessageBox::critical(
-            this,
-            tr("Import Error"),
-            tr("The import failed due to an unknown error."));
-    }
-
-    QApplication::restoreOverrideCursor();
-
-    ui->importButton->setEnabled(true);
+    dialog.exec();
 }
 
 void OptionsDialog::on_buttonBox_accepted()

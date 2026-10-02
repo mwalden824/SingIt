@@ -18,6 +18,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <regex>
+#include <utility>
 
 // ------------------------------------------------------------
 // Constructor / Destructor
@@ -26,18 +27,40 @@ MusicImporter::MusicImporter(
     MusicDatabase& musicDatabase,
     const std::string& sourceDatabasePath,
     const std::string& musicDirectory,
-    SimSearchModel& model
+    SimSearchModel& model,
+    ProgressCallback progressCallback
     )
     : musicDatabase(musicDatabase),
     sourceDatabasePath(sourceDatabasePath),
     musicDirectory(musicDirectory),
-    model(model)
+    model(model),
+    progressCallback(std::move(progressCallback))
 {
 }
 
 MusicImporter::~MusicImporter()
 {
     closeSourceDatabase();
+}
+
+int MusicImporter::getImportedCount() const
+{
+    return importedCount;
+}
+
+int MusicImporter::getSkippedCount() const
+{
+    return skippedCount;
+}
+
+void MusicImporter::cancel()
+{
+    cancelled.store(true);
+}
+
+bool MusicImporter::isCancelled() const
+{
+    return cancelled.load();
 }
 
 // ------------------------------------------------------------
@@ -47,6 +70,8 @@ MusicImporter::~MusicImporter()
 void MusicImporter::importAll(
     const std::string& logPath)
 {
+    qDebug() << "Starting music import...";
+
     logFile.open(logPath);
 
     if (!logFile.is_open())
@@ -61,8 +86,20 @@ void MusicImporter::importAll(
     {
         openSourceDatabase();
 
-        size_t importedCount = 0;
-        size_t skippedCount = 0;
+        importedCount = 0;
+        skippedCount = 0;
+
+        int total = 0;
+        int current = 0;
+
+        for (const auto& entry : std::filesystem::directory_iterator(musicDirectory))
+        {
+            if (!entry.is_regular_file())
+                continue;
+
+            if (entry.path().extension() == ".mp3")
+                ++total;
+        }
 
         for (
             const auto& entry :
@@ -83,6 +120,19 @@ void MusicImporter::importAll(
 
             if (extension != ".mp3")
                 continue;
+
+            if (cancelled.load())
+                break;
+
+            ++current;
+            if (progressCallback)
+            {
+                progressCallback(
+                    current,
+                    total,
+                    filename
+                    );
+            }
 
             // ------------------------------------------------
             // Read artist and track name from MP3 metadata.
@@ -197,6 +247,9 @@ void MusicImporter::importAll(
 
             for (const ParsedLyric& lyric : lyrics)
             {
+                if (cancelled.load())
+                    break;
+
                 const int lyricId =
                     musicDatabase.addLyric(
                         songId,

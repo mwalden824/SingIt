@@ -8,7 +8,8 @@
 #include <vector>
 #include <fstream>
 #include <cstdint>
-
+#include <atomic>
+#include <functional>
 
 // Forward declaration of SQLite connection type.
 struct sqlite3;
@@ -39,12 +40,18 @@ struct ParsedLyric
 class MusicImporter
 {
 public:
+    using ProgressCallback =
+        std::function<void(
+            int current,
+            int total,
+            const std::string& filename)>;
 
     MusicImporter(
         MusicDatabase& musicDatabase,
         const std::string& sourceDatabasePath,
         const std::string& musicDirectory,
-        SimSearchModel& model
+        SimSearchModel& model,
+        ProgressCallback progressCallback = {}
         );
 
     ~MusicImporter();
@@ -57,12 +64,22 @@ public:
         ) = delete;
 
 
+    int getImportedCount() const;
+    int getSkippedCount() const;
+
+    void cancel();
+    bool isCancelled() const;
+
     void importAll(
         const std::string& logPath
         );
 
-
 private:
+    std::atomic<bool> cancelled{false};
+    ProgressCallback progressCallback;
+
+    int importedCount = 0;
+    int skippedCount = 0;
 
     MusicDatabase& musicDatabase;
 
