@@ -129,9 +129,7 @@ void MusicDatabase::initialize()
 
             TrackName TEXT NOT NULL,
 
-            Filename TEXT NOT NULL,
-
-            FileNumber INTEGER NOT NULL
+            Filename TEXT NOT NULL
         );
 
 
@@ -202,8 +200,7 @@ void MusicDatabase::initialize()
 int64_t MusicDatabase::addSong(
     const std::string& artist,
     const std::string& trackName,
-    const std::string& filename,
-    int fileNumber
+    const std::string& filename
     )
 {
     const char* sql = R"SQL(
@@ -211,10 +208,9 @@ int64_t MusicDatabase::addSong(
         (
             Artist,
             TrackName,
-            Filename,
-            FileNumber
+            Filename
         )
-        VALUES (?, ?, ?, ?);
+        VALUES (?, ?, ?);
     )SQL";
 
     sqlite3_stmt* statement = nullptr;
@@ -254,12 +250,6 @@ int64_t MusicDatabase::addSong(
         filename.c_str(),
         -1,
         SQLITE_TRANSIENT
-        );
-
-    sqlite3_bind_int(
-        statement,
-        4,
-        fileNumber
         );
 
     result = sqlite3_step(statement);
@@ -443,7 +433,6 @@ std::vector<SearchResult> MusicDatabase::searchSimilar(
             s.Artist,
             s.TrackName,
             s.Filename,
-            s.FileNumber,
 
             l.StartTimeMs,
             l.StopTimeMs,
@@ -529,23 +518,20 @@ std::vector<SearchResult> MusicDatabase::searchSimilar(
                 sqlite3_column_text(statement, 2)
                 );
 
-        searchResult.fileNumber =
-            sqlite3_column_int(statement, 3);
-
         searchResult.startTimeMs =
-            sqlite3_column_int64(statement, 4);
+            sqlite3_column_int64(statement, 3);
 
         searchResult.stopTimeMs =
-            sqlite3_column_int64(statement, 5);
+            sqlite3_column_int64(statement, 4);
 
         searchResult.lyricText =
             reinterpret_cast<const char*>(
-                sqlite3_column_text(statement, 6)
+                sqlite3_column_text(statement, 5)
                 );
 
         searchResult.distance =
             static_cast<float>(
-                sqlite3_column_double(statement, 7)
+                sqlite3_column_double(statement, 6)
                 );
 
         results.push_back(
@@ -564,4 +550,65 @@ std::vector<SearchResult> MusicDatabase::searchSimilar(
     }
 
     return results;
+}
+
+bool MusicDatabase::doesSongExistInDatabase(
+    const std::string& filename)
+{
+    const char* sql = R"SQL(
+        SELECT 1
+        FROM Songs
+        WHERE Filename = ?
+        LIMIT 1;
+    )SQL";
+
+    sqlite3_stmt* statement = nullptr;
+
+    int result = sqlite3_prepare_v2(
+        db,
+        sql,
+        -1,
+        &statement,
+        nullptr
+        );
+
+    checkSqliteResult(
+        result,
+        "Preparing doesSongExistInDatabase"
+        );
+
+    result = sqlite3_bind_text(
+        statement,
+        1,
+        filename.c_str(),
+        -1,
+        SQLITE_TRANSIENT
+        );
+
+    checkSqliteResult(
+        result,
+        "Binding filename in doesSongExistInDatabase"
+        );
+
+    result = sqlite3_step(statement);
+
+    bool exists = false;
+
+    if (result == SQLITE_ROW)
+    {
+        exists = true;
+    }
+    else if (result != SQLITE_DONE)
+    {
+        sqlite3_finalize(statement);
+
+        checkSqliteResult(
+            result,
+            "Checking if song exists"
+            );
+    }
+
+    sqlite3_finalize(statement);
+
+    return exists;
 }

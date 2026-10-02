@@ -23,6 +23,12 @@ set(PROJECT_SOURCES
         whisperspeechrecognizer.h
         microphonerecorder.h
         microphonerecorder.cpp
+        optionsdialog.h
+        optionsdialog.cpp
+        optionsdialog.ui
+        importprogressdialog.h
+        importprogressdialog.cpp
+        importprogressdialog.ui
         third_party/sqlite/sqlite3.c
 )
 
@@ -35,6 +41,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         simsearchmodel.h simsearchmodel.cpp
         whisperspeechrecognizer.h whisperspeechrecognizer.cpp
         microphonerecorder.h microphonerecorder.cpp
+        optionsdialog.h optionsdialog.cpp optionsdialog.ui
+        importprogressdialog.h importprogressdialog.cpp importprogressdialog.ui
     )
 else()
     if(ANDROID)

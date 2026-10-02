@@ -8,12 +8,14 @@
 #include <vector>
 #include <fstream>
 #include <cstdint>
-
+#include <atomic>
+#include <functional>
 
 // Forward declaration of SQLite connection type.
 struct sqlite3;
 
-struct CsvTrack
+
+struct Mp3Metadata
 {
     std::string trackName;
     std::string artistName;
@@ -38,13 +40,18 @@ struct ParsedLyric
 class MusicImporter
 {
 public:
+    using ProgressCallback =
+        std::function<void(
+            int current,
+            int total,
+            const std::string& filename)>;
 
     MusicImporter(
         MusicDatabase& musicDatabase,
         const std::string& sourceDatabasePath,
-        const std::string& csvPath,
         const std::string& musicDirectory,
-        SimSearchModel& model
+        SimSearchModel& model,
+        ProgressCallback progressCallback = {}
         );
 
     ~MusicImporter();
@@ -57,18 +64,26 @@ public:
         ) = delete;
 
 
+    int getImportedCount() const;
+    int getSkippedCount() const;
+
+    void cancel();
+    bool isCancelled() const;
+
     void importAll(
         const std::string& logPath
         );
 
-
 private:
+    std::atomic<bool> cancelled{false};
+    ProgressCallback progressCallback;
+
+    int importedCount = 0;
+    int skippedCount = 0;
 
     MusicDatabase& musicDatabase;
 
     std::string sourceDatabasePath;
-
-    std::string csvPath;
 
     std::string musicDirectory;
 
@@ -81,21 +96,10 @@ private:
 
 
     // --------------------------------------------------------
-    // CSV
+    // MP3 metadata
     // --------------------------------------------------------
 
-    std::vector<CsvTrack> loadCsvTracks() const;
-
-    static std::vector<std::string> parseCsvLine(
-        const std::string& line
-        );
-
-
-    // --------------------------------------------------------
-    // Files
-    // --------------------------------------------------------
-
-    static int extractFileNumber(
+    Mp3Metadata readMp3Metadata(
         const std::string& filename
         );
 
@@ -145,7 +149,6 @@ private:
 
     void writeLog(
         const std::string& status,
-        int fileNumber,
         const std::string& filename,
         const std::string& trackName,
         const std::string& artistName,
