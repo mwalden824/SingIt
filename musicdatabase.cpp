@@ -551,3 +551,64 @@ std::vector<SearchResult> MusicDatabase::searchSimilar(
 
     return results;
 }
+
+bool MusicDatabase::doesSongExistInDatabase(
+    const std::string& filename)
+{
+    const char* sql = R"SQL(
+        SELECT 1
+        FROM Songs
+        WHERE Filename = ?
+        LIMIT 1;
+    )SQL";
+
+    sqlite3_stmt* statement = nullptr;
+
+    int result = sqlite3_prepare_v2(
+        db,
+        sql,
+        -1,
+        &statement,
+        nullptr
+        );
+
+    checkSqliteResult(
+        result,
+        "Preparing doesSongExistInDatabase"
+        );
+
+    result = sqlite3_bind_text(
+        statement,
+        1,
+        filename.c_str(),
+        -1,
+        SQLITE_TRANSIENT
+        );
+
+    checkSqliteResult(
+        result,
+        "Binding filename in doesSongExistInDatabase"
+        );
+
+    result = sqlite3_step(statement);
+
+    bool exists = false;
+
+    if (result == SQLITE_ROW)
+    {
+        exists = true;
+    }
+    else if (result != SQLITE_DONE)
+    {
+        sqlite3_finalize(statement);
+
+        checkSqliteResult(
+            result,
+            "Checking if song exists"
+            );
+    }
+
+    sqlite3_finalize(statement);
+
+    return exists;
+}

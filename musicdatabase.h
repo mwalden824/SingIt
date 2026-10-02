@@ -50,6 +50,8 @@ public:
         const std::vector<float>& embedding
         );
 
+    bool doesSongExistInDatabase(const std::string& filename);
+
     std::vector<SearchResult> searchSimilar(
         const std::vector<float>& queryEmbedding,
         int limit

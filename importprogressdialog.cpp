@@ -34,7 +34,6 @@ public:
     {
         importer = nullptr;
     }
-
 public slots:
 
     void run()
@@ -61,6 +60,8 @@ public slots:
 
             if (importer->isCancelled())
             {
+                delete importer;
+                importer = nullptr;
                 emit cancelled();
                 return;
             }
@@ -68,21 +69,28 @@ public slots:
             emit finished(
                 static_cast<int>(importer->getImportedCount()),
                 static_cast<int>(importer->getSkippedCount()));
+            delete importer;
+            importer = nullptr;
         }
         catch (const std::exception& e)
         {
             emit failed(
                 QString::fromUtf8(e.what()));
+            delete importer;
+            importer = nullptr;
         }
         catch (...)
         {
             emit failed(
                 "Unknown error occurred during import.");
+            delete importer;
+            importer = nullptr;
         }
     }
     void cancel()
     {
-        importer->cancel();
+        if (importer != nullptr)
+            importer->cancel();
     }
 signals:
 
@@ -228,6 +236,12 @@ void ImportProgressDialog::startImport()
         &ImportProgressDialog::onImportCancelled
         );
 
+    connect(
+        worker,
+        &ImportWorker::cancelled,
+        workerThread,
+        &QThread::quit);
+
     workerThread->start();
 }
 
@@ -290,14 +304,7 @@ void ImportProgressDialog::onImportFinished(
         QString("%1 of %1")
             .arg(ui->progressBar->maximum()));
 
-    ui->buttonBox->button(
-                     QDialogButtonBox::Close
-                     )->setEnabled(true);
-
-    ui->buttonBox->button(
-                     QDialogButtonBox::Close
-                     )->setFocus();
-
+    accept();
     worker = nullptr;
 }
 

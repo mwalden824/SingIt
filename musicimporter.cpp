@@ -134,6 +134,12 @@ void MusicImporter::importAll(
                     );
             }
 
+            if (musicDatabase.doesSongExistInDatabase(filename))
+            {
+                ++skippedCount;
+                continue;
+            }
+
             // ------------------------------------------------
             // Read artist and track name from MP3 metadata.
             // ------------------------------------------------
