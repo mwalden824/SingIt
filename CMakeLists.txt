@@ -85,10 +85,6 @@ target_link_libraries(SingIt PRIVATE
     ntdll
 )
 
-target_link_options(SingIt PRIVATE
-    -Wno-drectve
-)
-
 # Copy ONNX Runtime DLL next to the executable after building
 if(WIN32)
     set(WINDEPLOYQT
