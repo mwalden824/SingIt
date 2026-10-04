@@ -41,7 +41,17 @@ private slots:
     void on_searchButton_clicked();
     void on_speakButton_clicked();
     void stopVoiceRecording();
-    // void on_actionMusicLibraryFolder_triggered();
+    void onPrevButtonClicked();
+    void onPlayPauseButtonClicked();
+    void onSkipButtonClicked();
+    void onShuffleButtonClicked();
+
+    void onVolumeButtonClicked();
+    void onVolumeSliderValueChanged(int value);
+
+    void onTrackSliderPressed();
+    void onTrackSliderReleased();
+    void onTrackSliderMoved(int position);
 
 private:
 
@@ -56,6 +66,8 @@ private:
     QAudioOutput *audioOutput;
 
     qint64 playbackStopTime;
+    SearchResult currentTrack;
+    QImage currentAlbumArt;
 
     int getMp3Duration(
         const QString& filename);
@@ -65,6 +77,16 @@ private:
         int startTimeMs,
         int stopTimeMs
         );
+    void playMp3(const QString& filename);
+
+    int songLength = 0;
+    bool isPlay = true;
+    bool isPlayingFullSong = false;
+    bool isSeeking = false;
+    bool isShuffling = false;
+    bool isMuted = false;
+    float previousVolume = 100;
+    void updateVolumeIcon(float volume);
 
     QString getMusicLibraryPath() const;
     void inspectWhisperModels();
@@ -73,6 +95,10 @@ private:
     std::unique_ptr<WhisperSpeechRecognizer> whisperRecognizer_;
 
     QTimer voiceRecordingTimer_;
+
+    void updateAlbumArtLabel();
+
+    void displayTrack(const SearchResult& result);
 };
 
 #endif // MAINWINDOW_H
