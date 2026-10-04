@@ -277,15 +277,15 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
               </property>
               <property name="font">
                <font>
-                <pointsize>8</pointsize>
+                <pointsize>7</pointsize>
                </font>
               </property>
               <property name="styleSheet">
                <string notr="true">QLabel {
     padding-left: 5px;
-    padding-right: 1px;
-    padding-top: 1px;
-    padding-bottom: 1px;
+    padding-right: 0px;
+    padding-top: 0px;
+    padding-bottom: 0px;
 }</string>
               </property>
               <property name="text">
@@ -312,15 +312,15 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
               </property>
               <property name="font">
                <font>
-                <pointsize>8</pointsize>
+                <pointsize>7</pointsize>
                </font>
               </property>
               <property name="styleSheet">
                <string notr="true">QLabel {
     padding-left: 5px;
-    padding-right: 1px;
-    padding-top: 1px;
-    padding-bottom: 1px;
+    padding-right: 0px;
+    padding-top: 0px;
+    padding-bottom: 0px;
 }</string>
               </property>
               <property name="text">
@@ -362,7 +362,7 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
              <enum>Qt::Orientation::Vertical</enum>
             </property>
             <property name="sizeType">
-             <enum>QSizePolicy::Policy::Fixed</enum>
+             <enum>QSizePolicy::Policy::Expanding</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
