@@ -387,8 +387,8 @@ void MainWindow::queryDatabaseAndPlayClip(QString text)
                 static_cast<int>(result.stopTimeMs) + paddingMs
                 );
 
-        displayTrack(result);
         isPlayingFullSong = false;
+        displayTrack(result);
         ui->playPauseButton->setIcon(QIcon(":resources/icons/player-play.svg"));
         isPlay = true;
 
@@ -934,7 +934,6 @@ void MainWindow::onTrackSliderReleased()
 
 void MainWindow::onTrackSliderMoved(int position)
 {
-    // Q_UNUSED(position);
     // Update the current time label while dragging
     int totalSeconds = position / 1000;
     int minutes = totalSeconds / 60;
