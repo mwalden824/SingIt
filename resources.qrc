@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/icons/arrows-shuffle.svg</file>
+        <file>resources/icons/player-pause.svg</file>
+        <file>resources/icons/player-play.svg</file>
+        <file>resources/icons/player-skip-back.svg</file>
+        <file>resources/icons/player-skip-forward.svg</file>
+        <file>resources/icons/player-track-next.svg</file>
+        <file>resources/icons/player-track-prev.svg</file>
+        <file>resources/icons/volume.svg</file>
+        <file>resources/icons/volume-2.svg</file>
+        <file>resources/icons/volume-3.svg</file>
+        <file>resources/icons/volume-4.svg</file>
+        <file>resources/EmptyAlbumArt.png</file>
+        <file>resources/icons/arrows-shuffle-green.svg</file>
+    </qresource>
+</RCC>

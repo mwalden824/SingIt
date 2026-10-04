@@ -11,6 +11,12 @@
 
 #include <string>
 #include <vector>
+#include <QDir>
+#include <QEventLoop>
+#include <QMediaMetaData>
+#include <QPixmap>
+#include <QUrl>
+#include <QRandomGenerator>
 
 // ============================================================
 // MainWindow
@@ -29,6 +35,35 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    connect(ui->prevButton, &QPushButton::clicked,
+                this, &MainWindow::onPrevButtonClicked);
+
+    connect(ui->playPauseButton, &QPushButton::clicked,
+            this, &MainWindow::onPlayPauseButtonClicked);
+
+    connect(ui->skipButton, &QPushButton::clicked,
+            this, &MainWindow::onSkipButtonClicked);
+
+    connect(ui->shuffleButton, &QPushButton::clicked,
+            this, &MainWindow::onShuffleButtonClicked);
+
+
+    connect(ui->volumeButton, &QPushButton::clicked,
+            this, &MainWindow::onVolumeButtonClicked);
+
+    connect(ui->volumeSlider, &QSlider::valueChanged,
+            this, &MainWindow::onVolumeSliderValueChanged);
+
+
+    connect(ui->trackSlider, &QSlider::sliderPressed,
+            this, &MainWindow::onTrackSliderPressed);
+
+    connect(ui->trackSlider, &QSlider::sliderReleased,
+            this, &MainWindow::onTrackSliderReleased);
+
+    connect(ui->trackSlider, &QSlider::sliderMoved,
+            this, &MainWindow::onTrackSliderMoved);
+
     mediaPlayer->setAudioOutput(
         audioOutput
         );
@@ -41,13 +76,7 @@ MainWindow::MainWindow(QWidget *parent)
         mediaPlayer,
         &QMediaPlayer::positionChanged,
         this,
-        [this](qint64 position)
-        {
-            if (position >= playbackStopTime)
-            {
-                mediaPlayer->stop();
-            }
-        }
+        &MainWindow::onPositionChanged
         );
 
 
@@ -86,6 +115,38 @@ MainWindow::MainWindow(QWidget *parent)
         &QTimer::timeout,
         this,
         &MainWindow::stopVoiceRecording);
+
+    mediaPlayer->audioOutput()->setVolume(1.0);
+}
+
+void MainWindow::onPositionChanged(qint64 position)
+{
+    // Update slider to current position
+    if (!isSeeking)
+    {
+        ui->trackSlider->setValue(static_cast<int>(position));
+    }
+    int totalSeconds = position / 1000;
+    int minutes = totalSeconds / 60;
+    int seconds = totalSeconds % 60;
+
+    QString formattedTime = QString("%1:%2")
+                                .arg(minutes)
+                                .arg(seconds, 2, 10, QChar('0'));
+
+    ui->currentTrackTimeLabel->setText(formattedTime);
+
+    if (position >= playbackStopTime)
+    {
+        if (isPlayingFullSong)
+        {
+            onSkipButtonClicked();
+        }
+        else
+        {
+            mediaPlayer->stop();
+        }
+    }
 }
 
 // ============================================================
@@ -311,7 +372,7 @@ void MainWindow::queryDatabaseAndPlayClip(QString text)
 
         const int paddingMs = 2000; // 2 seconds
 
-        const int songLength =
+        songLength =
             getMp3Duration(fullPath);
 
         const int startTime =
@@ -325,6 +386,18 @@ void MainWindow::queryDatabaseAndPlayClip(QString text)
                 songLength,
                 static_cast<int>(result.stopTimeMs) + paddingMs
                 );
+
+        isPlayingFullSong = false;
+        displayTrack(result);
+        ui->playPauseButton->setIcon(QIcon(":resources/icons/player-play.svg"));
+        isPlay = true;
+
+        // Enable buttons
+        ui->prevButton->setEnabled(false);
+        ui->skipButton->setEnabled(false);
+        ui->playPauseButton->setEnabled(true);
+        ui->shuffleButton->setEnabled(true);
+        ui->trackSlider->setEnabled(true);
 
         playMp3Section(
             fullPath,
@@ -400,6 +473,34 @@ void MainWindow::playMp3Section(
         );
 
     mediaPlayer->play();
+}
+
+void MainWindow::playMp3(const QString& filename)
+{
+    QString fullPath = getMusicLibraryPath() + "/" + filename;
+
+    qDebug() << "Loading MP3:" << fullPath;
+
+    mediaPlayer->setSource(QUrl::fromLocalFile(fullPath));
+    playbackStopTime =
+        getMp3Duration(fullPath);
+
+    // Wait until the media has loaded
+    while (mediaPlayer->mediaStatus() == QMediaPlayer::LoadingMedia)
+    {
+        QCoreApplication::processEvents();
+        QThread::msleep(10);
+    }
+
+    if (mediaPlayer->mediaStatus() == QMediaPlayer::LoadedMedia)
+    {
+        mediaPlayer->play();
+    }
+    else
+    {
+        qDebug() << "Failed to load MP3:"
+                 << mediaPlayer->errorString();
+    }
 }
 
 int MainWindow::getMp3Duration(
@@ -539,6 +640,407 @@ void MainWindow::inspectWhisperModels()
 
     inspectSession("WHISPER ENCODER", encoderSession);
     inspectSession("WHISPER DECODER", decoderSession);
+}
+
+void MainWindow::onPrevButtonClicked()
+{
+    QDir musicDir(getMusicLibraryPath());
+
+    QStringList files = musicDir.entryList(
+        QStringList() << "*.mp3",
+        QDir::Files,
+        QDir::NoSort
+        );
+
+    if (files.isEmpty())
+        return;
+
+    QString currentFilename =
+        QString::fromStdString(currentTrack.filename);
+
+    int currentIndex = files.indexOf(currentFilename);
+
+    if (currentIndex == -1)
+    {
+        qDebug() << "Current track not found:" << currentFilename;
+        return;
+    }
+
+    // int previousIndex = currentIndex - 1;
+    int previousIndex;
+
+    if (isShuffling)
+    {
+        previousIndex = QRandomGenerator::global()->bounded(files.size());
+    }
+    else
+    {
+        previousIndex = currentIndex - 1;
+
+        if (previousIndex < 0)
+            previousIndex = files.size() - 1;
+    }
+
+    // First track -> last track
+    if (previousIndex < 0)
+        previousIndex = files.size() - 1;
+
+    QString previousFilename = files[previousIndex];
+
+    qDebug() << "Going back to:" << previousFilename;
+
+    playMp3(previousFilename);
+
+    // Get metadata from the existing media player
+    QMediaMetaData metadata = mediaPlayer->metaData();
+
+    SearchResult newTrack{};
+
+    newTrack.filename = previousFilename.toStdString();
+
+    QVariant title = metadata.value(QMediaMetaData::Title);
+    if (title.isValid())
+        newTrack.trackName = title.toString().toStdString();
+
+    QVariant artist = metadata.value(QMediaMetaData::ContributingArtist);
+    if (artist.isValid())
+    {
+        QStringList artists = artist.toStringList();
+
+        if (!artists.isEmpty())
+            newTrack.artist = artists.first().toStdString();
+    }
+
+    currentTrack = newTrack;
+    QString fullPath = QDir(getMusicLibraryPath()).filePath(QString::fromStdString(currentTrack.filename));
+    songLength = getMp3Duration(fullPath);
+    isPlayingFullSong = true;
+    ui->syncedLyricLabel->setText("");
+
+    displayTrack(currentTrack);
+}
+
+void MainWindow::onPlayPauseButtonClicked()
+{
+    ui->syncedLyricLabel->setText("");
+    if (isPlay)
+    {
+        if (isPlayingFullSong)
+        {
+            mediaPlayer->play();
+        }
+        else
+        {
+            playMp3(QString::fromStdString(currentTrack.filename));
+            isPlayingFullSong = true;
+            ui->prevButton->setEnabled(true);
+            ui->skipButton->setEnabled(true);
+        }
+
+        ui->playPauseButton->setIcon(QIcon(":resources/icons/player-pause.svg"));
+        isPlay = false;
+    }
+    else
+    {
+        mediaPlayer->pause();
+        ui->playPauseButton->setIcon(QIcon(":resources/icons/player-play.svg"));
+        isPlay = true;
+    }
+}
+
+void MainWindow::onSkipButtonClicked()
+{
+    QDir musicDir(getMusicLibraryPath());
+
+    QStringList files = musicDir.entryList(
+        QStringList() << "*.mp3",
+        QDir::Files,
+        QDir::NoSort
+        );
+
+    if (files.isEmpty())
+        return;
+
+    QString currentFilename =
+        QString::fromStdString(currentTrack.filename);
+
+    int currentIndex = files.indexOf(currentFilename);
+
+    if (currentIndex == -1)
+    {
+        qDebug() << "Current track not found:" << currentFilename;
+        return;
+    }
+
+    // int nextIndex = currentIndex + 1;
+    int nextIndex;
+
+    if (isShuffling)
+    {
+        nextIndex = QRandomGenerator::global()->bounded(files.size());
+    }
+    else
+    {
+        nextIndex = currentIndex + 1;
+
+        if (nextIndex >= files.size())
+            nextIndex = 0;
+    }
+
+    // Last track -> first track
+    if (nextIndex >= files.size())
+        nextIndex = 0;
+
+    QString nextFilename = files[nextIndex];
+
+    qDebug() << "Skipping to:" << nextFilename;
+
+    playMp3(nextFilename);
+
+    // Get metadata from the existing media player
+    QMediaMetaData metadata = mediaPlayer->metaData();
+
+    SearchResult newTrack{};
+
+    newTrack.filename = nextFilename.toStdString();
+
+    QVariant title = metadata.value(QMediaMetaData::Title);
+    if (title.isValid())
+        newTrack.trackName = title.toString().toStdString();
+
+    QVariant artist = metadata.value(QMediaMetaData::ContributingArtist);
+    if (artist.isValid())
+    {
+        QStringList artists = artist.toStringList();
+
+        if (!artists.isEmpty())
+            newTrack.artist = artists.first().toStdString();
+    }
+
+    currentTrack = newTrack;
+    QString fullPath = QDir(getMusicLibraryPath()).filePath(QString::fromStdString(currentTrack.filename));
+    songLength = getMp3Duration(fullPath);
+    isPlayingFullSong = true;
+    ui->syncedLyricLabel->setText("");
+
+    displayTrack(currentTrack);
+}
+
+void MainWindow::onShuffleButtonClicked()
+{
+    if (isShuffling)
+    {
+        // Shuffle OFF
+        ui->shuffleButton->setIcon(
+            QIcon(":resources/icons/arrows-shuffle.svg")
+            );
+        isShuffling = false;
+    }
+    else
+    {
+        // Shuffle ON
+        ui->shuffleButton->setIcon(
+            QIcon(":resources/icons/arrows-shuffle-green.svg")
+            );
+        isShuffling = true;
+    }
+}
+
+void MainWindow::onVolumeButtonClicked()
+{
+    if (isMuted)
+    {
+        // Unmute
+        isMuted = false;
+
+        mediaPlayer->audioOutput()->setVolume(previousVolume);
+
+        ui->volumeSlider->setValue(static_cast<int>(previousVolume * 100.0));
+
+        updateVolumeIcon(previousVolume);
+    }
+    else
+    {
+        // Mute
+        previousVolume = static_cast<float>(ui->volumeSlider->value()) / 100.0;
+
+        isMuted = true;
+
+        mediaPlayer->audioOutput()->setVolume(0.0);
+
+        ui->volumeSlider->setValue(0);
+
+        updateVolumeIcon(0.0);
+    }
+}
+
+void MainWindow::updateVolumeIcon(float volume)
+{
+    if (volume <= 0.0) // MUTE
+    {
+        ui->volumeButton->setIcon(
+            QIcon(":resources/icons/volume-3.svg")
+            );
+    }
+    else if (volume < 0.1) // low volume icon
+    {
+        ui->volumeButton->setIcon(
+            QIcon(":resources/icons/volume-4.svg")
+            );
+    }
+    else if (volume <= 0.7) // Medium volume icon
+    {
+        ui->volumeButton->setIcon(
+            QIcon(":resources/icons/volume-2.svg")
+            );
+    }
+    else // Max volume icon
+    {
+        ui->volumeButton->setIcon(
+            QIcon(":resources/icons/volume.svg")
+            );
+    }
+}
+
+void MainWindow::onVolumeSliderValueChanged(int value)
+{
+    float newValue = static_cast<float>(value) / 100.0;
+    mediaPlayer->audioOutput()->setVolume(newValue);
+
+    if (value == 0)
+    {
+        isMuted = true;
+    }
+    else
+    {
+        isMuted = false;
+        previousVolume = value;
+    }
+    updateVolumeIcon(newValue);
+}
+
+void MainWindow::onTrackSliderPressed()
+{
+    isSeeking = true;
+}
+
+void MainWindow::onTrackSliderReleased()
+{
+    isSeeking = false;
+    int position = ui->trackSlider->value();
+
+    mediaPlayer->setPosition(position);
+}
+
+void MainWindow::onTrackSliderMoved(int position)
+{
+    // Update the current time label while dragging
+    int totalSeconds = position / 1000;
+    int minutes = totalSeconds / 60;
+    int seconds = totalSeconds % 60;
+
+    QString formattedTime = QString("%1:%2")
+                                .arg(minutes)
+                                .arg(seconds, 2, 10, QChar('0'));
+
+    ui->currentTrackTimeLabel->setText(formattedTime);
+}
+
+void MainWindow::displayTrack(const SearchResult& result)
+{
+    currentTrack = result;
+
+    // Artist
+    ui->artistNameLabel->setText(
+        QString::fromStdString(result.artist)
+        );
+
+    // Track name
+    ui->trackNameLabel->setText(
+        QString::fromStdString(result.trackName)
+        );
+
+    // Album artwork
+    updateAlbumArtLabel();
+
+    // Display Synced Lyric + Match Percentage
+    float similarity =
+        1.0f - (currentTrack.distance * currentTrack.distance) / 2.0f;
+
+    float matchPercent = similarity * 100.0f;
+
+    QString lyricText = QString::fromStdString(currentTrack.lyricText);
+
+    lyricText += QString(" (%1%)").arg(matchPercent, 0, 'f', 1);
+
+
+    if (!isPlayingFullSong)
+    {
+        ui->syncedLyricLabel->setText(lyricText);
+    }
+
+    // Display song length
+    int totalSeconds = songLength / 1000;
+    int minutes = totalSeconds / 60;
+    int seconds = totalSeconds % 60;
+
+    QString formattedTime = QString("%1:%2")
+                                .arg(minutes)
+                                .arg(seconds, 2, 10, QChar('0'));
+
+    ui->totalTrackTimeLabel->setText(formattedTime);
+
+    ui->trackSlider->setRange(0, songLength);
+}
+
+void MainWindow::updateAlbumArtLabel()
+{
+    QString filename = QString::fromStdString(currentTrack.filename);
+
+    QString fullPath =
+        QDir(getMusicLibraryPath()).filePath(filename);
+
+    QMediaPlayer player;
+
+    QEventLoop loop;
+
+    connect(&player, &QMediaPlayer::mediaStatusChanged,
+            &loop, [&](QMediaPlayer::MediaStatus status)
+            {
+                if (status == QMediaPlayer::LoadedMedia ||
+                    status == QMediaPlayer::InvalidMedia)
+                {
+                    loop.quit();
+                }
+            });
+
+    player.setSource(QUrl::fromLocalFile(fullPath));
+
+    loop.exec();
+
+    QMediaMetaData metadata = player.metaData();
+
+    QVariant coverArt =
+        metadata.value(QMediaMetaData::ThumbnailImage);
+
+    if (coverArt.isValid())
+    {
+        currentAlbumArt =
+            coverArt.value<QImage>();
+
+        ui->albumArtLabel->setPixmap(
+            QPixmap::fromImage(currentAlbumArt).scaled(
+                ui->albumArtLabel->size(),
+                Qt::KeepAspectRatio,
+                Qt::SmoothTransformation
+                )
+            );
+    }
+    else
+    {
+        currentAlbumArt = QImage();
+        ui->albumArtLabel->clear();
+    }
 }
 
 // ============================================================

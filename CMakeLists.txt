@@ -43,6 +43,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         microphonerecorder.h microphonerecorder.cpp
         optionsdialog.h optionsdialog.cpp optionsdialog.ui
         importprogressdialog.h importprogressdialog.cpp importprogressdialog.ui
+        resources.qrc
+        resources/icons/arrows-shuffle.svg resources/icons/player-pause.svg resources/icons/player-play.svg resources/icons/player-skip-back.svg resources/icons/player-skip-forward.svg resources/icons/player-track-next.svg resources/icons/player-track-prev.svg resources/icons/volume-2.svg resources/icons/volume-3.svg resources/icons/volume-4.svg resources/icons/volume.svg
+        resources/icons/arrows-shuffle-green.svg
     )
 else()
     if(ANDROID)
