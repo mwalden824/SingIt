@@ -52,6 +52,7 @@ private slots:
     void onTrackSliderPressed();
     void onTrackSliderReleased();
     void onTrackSliderMoved(int position);
+    void onPositionChanged(qint64 position);
 
 private:
 

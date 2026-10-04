@@ -76,28 +76,7 @@ MainWindow::MainWindow(QWidget *parent)
         mediaPlayer,
         &QMediaPlayer::positionChanged,
         this,
-        [this](qint64 position)
-        {
-            // Update slider to current position
-            if (!isSeeking)
-            {
-                ui->trackSlider->setValue(static_cast<int>(position));
-            }
-            int totalSeconds = position / 1000;
-            int minutes = totalSeconds / 60;
-            int seconds = totalSeconds % 60;
-
-            QString formattedTime = QString("%1:%2")
-                                        .arg(minutes)
-                                        .arg(seconds, 2, 10, QChar('0'));
-
-            ui->currentTrackTimeLabel->setText(formattedTime);
-
-            if (position >= playbackStopTime)
-            {
-                mediaPlayer->stop();
-            }
-        }
+        &MainWindow::onPositionChanged
         );
 
 
@@ -138,6 +117,36 @@ MainWindow::MainWindow(QWidget *parent)
         &MainWindow::stopVoiceRecording);
 
     mediaPlayer->audioOutput()->setVolume(1.0);
+}
+
+void MainWindow::onPositionChanged(qint64 position)
+{
+    // Update slider to current position
+    if (!isSeeking)
+    {
+        ui->trackSlider->setValue(static_cast<int>(position));
+    }
+    int totalSeconds = position / 1000;
+    int minutes = totalSeconds / 60;
+    int seconds = totalSeconds % 60;
+
+    QString formattedTime = QString("%1:%2")
+                                .arg(minutes)
+                                .arg(seconds, 2, 10, QChar('0'));
+
+    ui->currentTrackTimeLabel->setText(formattedTime);
+
+    if (position >= playbackStopTime)
+    {
+        if (isPlayingFullSong)
+        {
+            onSkipButtonClicked();
+        }
+        else
+        {
+            mediaPlayer->stop();
+        }
+    }
 }
 
 // ============================================================
@@ -384,8 +393,8 @@ void MainWindow::queryDatabaseAndPlayClip(QString text)
         isPlay = true;
 
         // Enable buttons
-        ui->prevButton->setEnabled(true);
-        ui->skipButton->setEnabled(true);
+        ui->prevButton->setEnabled(false);
+        ui->skipButton->setEnabled(false);
         ui->playPauseButton->setEnabled(true);
         ui->shuffleButton->setEnabled(true);
         ui->trackSlider->setEnabled(true);
@@ -713,8 +722,6 @@ void MainWindow::onPrevButtonClicked()
 
 void MainWindow::onPlayPauseButtonClicked()
 {
-    qDebug() << "Play Pause Button Clicked!";
-
     ui->syncedLyricLabel->setText("");
     if (isPlay)
     {
@@ -726,6 +733,8 @@ void MainWindow::onPlayPauseButtonClicked()
         {
             playMp3(QString::fromStdString(currentTrack.filename));
             isPlayingFullSong = true;
+            ui->prevButton->setEnabled(true);
+            ui->skipButton->setEnabled(true);
         }
 
         ui->playPauseButton->setIcon(QIcon(":resources/icons/player-pause.svg"));
