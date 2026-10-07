@@ -44,8 +44,21 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         optionsdialog.h optionsdialog.cpp optionsdialog.ui
         importprogressdialog.h importprogressdialog.cpp importprogressdialog.ui
         resources.qrc
-        resources/icons/arrows-shuffle.svg resources/icons/player-pause.svg resources/icons/player-play.svg resources/icons/player-skip-back.svg resources/icons/player-skip-forward.svg resources/icons/player-track-next.svg resources/icons/player-track-prev.svg resources/icons/volume-2.svg resources/icons/volume-3.svg resources/icons/volume-4.svg resources/icons/volume.svg
+        resources/icons/arrows-shuffle.svg
+        resources/icons/player-pause.svg
+        resources/icons/player-play.svg
+        resources/icons/player-skip-back.svg
+        resources/icons/player-skip-forward.svg
+        resources/icons/player-track-next.svg
+        resources/icons/player-track-prev.svg
+        resources/icons/volume-2.svg
+        resources/icons/volume-3.svg
+        resources/icons/volume-4.svg
+        resources/icons/volume.svg
         resources/icons/arrows-shuffle-green.svg
+        resources/app.ico
+        resources/app.ico
+        resources/icons/microphone.svg
     )
 else()
     if(ANDROID)
@@ -95,6 +108,8 @@ if(WIN32)
     )
 
     add_custom_command(TARGET SingIt POST_BUILD
+        COMMENT "Deploying Third Party Dependencies..."
+
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_SOURCE_DIR}/third_party"
             "$<TARGET_FILE_DIR:SingIt>/third_party"
@@ -103,19 +118,13 @@ if(WIN32)
             --no-translations
             "$<TARGET_FILE:SingIt>"
 
-        COMMENT "Deploying Qt dependencies..."
+        COMMENT "Deploying Neural Network Models..."
 
         COMMAND ${CMAKE_COMMAND} -E copy_directory
                 "${CMAKE_SOURCE_DIR}/models"
                 "$<TARGET_FILE_DIR:SingIt>/models"
 
-        COMMENT "Deploying Qt dependencies and application files..."
-
-        # COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        #     "${CMAKE_SOURCE_DIR}/music.db"
-        #     "$<TARGET_FILE_DIR:SingIt>/music.db"
-
-        COMMENT "Copying music database to build directory..."
+        COMMENT "Deploying ONNX Runtime..."
 
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_SOURCE_DIR}/third_party/onnxruntime/lib/onnxruntime.dll"

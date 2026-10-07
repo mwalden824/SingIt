@@ -32,7 +32,8 @@
    <string>Sing It</string>
   </property>
   <property name="windowIcon">
-   <iconset theme="QIcon::ThemeIcon::AudioCard"/>
+   <iconset resource="resources.qrc">
+    <normaloff>:/resources/app.ico</normaloff>:/resources/app.ico</iconset>
   </property>
   <property name="styleSheet">
    <string notr="true">QPushButton[mediaButton=&quot;true&quot;] {
@@ -156,7 +157,8 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
            <string/>
           </property>
           <property name="icon">
-           <iconset theme="QIcon::ThemeIcon::MediaRecord"/>
+           <iconset resource="resources.qrc">
+            <normaloff>:/resources/icons/microphone.svg</normaloff>:/resources/icons/microphone.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>

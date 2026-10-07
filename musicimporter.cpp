@@ -19,6 +19,8 @@
 #include <stdexcept>
 #include <regex>
 #include <utility>
+#include <QDir>
+#include <QStandardPaths>
 
 // ------------------------------------------------------------
 // Constructor / Destructor
@@ -72,7 +74,14 @@ void MusicImporter::importAll(
 {
     qDebug() << "Starting music import...";
 
-    logFile.open(logPath);
+    QString dataDirectory =
+        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+
+    QDir().mkpath(dataDirectory);
+
+    auto fullLogPath = QDir(dataDirectory).filePath(QString::fromStdString(logPath));
+
+    logFile.open(fullLogPath.toStdString());
 
     if (!logFile.is_open())
     {

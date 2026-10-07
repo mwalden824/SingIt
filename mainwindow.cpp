@@ -17,17 +17,27 @@
 #include <QPixmap>
 #include <QUrl>
 #include <QRandomGenerator>
+#include <QStandardPaths>
 
 // ============================================================
 // MainWindow
 // ============================================================
+QString getDatabasePath()
+{
+    QString dataDirectory =
+        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+
+    QDir().mkpath(dataDirectory);
+
+    return QDir(dataDirectory).filePath("music.db");
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
       ui(new Ui::MainWindow),
       model(nullptr),
       musicDatabase(
-          "music.db"
+          getDatabasePath().toStdString()
           ),
       mediaPlayer(new QMediaPlayer(this)),
       audioOutput(new QAudioOutput(this)),

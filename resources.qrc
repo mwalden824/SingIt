@@ -13,5 +13,7 @@
         <file>resources/icons/volume-4.svg</file>
         <file>resources/EmptyAlbumArt.png</file>
         <file>resources/icons/arrows-shuffle-green.svg</file>
+        <file>resources/app.ico</file>
+        <file>resources/icons/microphone.svg</file>
     </qresource>
 </RCC>
