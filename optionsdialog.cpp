@@ -36,7 +36,7 @@ OptionsDialog::~OptionsDialog()
 
 void OptionsDialog::loadSettings()
 {
-    QSettings settings("Michael Walden", "SingIt");
+    QSettings settings("3Point", "SingIt");
 
     ui->musicFolderLineEdit->setText(
         settings.value("musicLibraryPath").toString());
@@ -47,7 +47,7 @@ void OptionsDialog::loadSettings()
 
 void OptionsDialog::saveSettings()
 {
-    QSettings settings("Michael Walden", "SingIt");
+    QSettings settings("3Point", "SingIt");
 
     settings.setValue(
         "musicLibraryPath",
