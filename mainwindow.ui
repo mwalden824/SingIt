@@ -59,6 +59,9 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
      <height>400</height>
     </size>
    </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: #202020;</string>
+   </property>
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
      <layout class="QVBoxLayout" name="verticalLayout">
@@ -76,6 +79,9 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
           <pointsize>20</pointsize>
           <bold>true</bold>
          </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: white;</string>
         </property>
         <property name="text">
          <string>Search Lyrics</string>
@@ -105,6 +111,10 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
           <height>70</height>
          </size>
         </property>
+        <property name="styleSheet">
+         <string notr="true">color: white;
+background-color: #303030;</string>
+        </property>
        </widget>
       </item>
       <item>
@@ -129,6 +139,10 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
             <height>0</height>
            </size>
           </property>
+          <property name="styleSheet">
+           <string notr="true">color: white;
+background-color: #303030;</string>
+          </property>
           <property name="text">
            <string>Sing</string>
           </property>
@@ -151,7 +165,14 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
           <property name="styleSheet">
            <string notr="true">QPushButton:checked {
     color: red;
-}</string>
+	background-color: red;
+}
+QPushButton {
+	color: white;
+	background-color: #303030;
+}
+
+</string>
           </property>
           <property name="text">
            <string/>
@@ -207,6 +228,9 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
           <width>16777215</width>
           <height>20</height>
          </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: white;</string>
         </property>
         <property name="text">
          <string/>
@@ -321,7 +345,9 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
     padding-right: 0px;
     padding-top: 0px;
     padding-bottom: 0px;
-}</string>
+	color: white;
+}
+</string>
               </property>
               <property name="text">
                <string>Arist Name</string>
@@ -356,6 +382,7 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
     padding-right: 0px;
     padding-top: 0px;
     padding-bottom: 0px;
+	color: white;
 }</string>
               </property>
               <property name="text">
@@ -530,6 +557,9 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
                 <height>20</height>
                </size>
               </property>
+              <property name="styleSheet">
+               <string notr="true">color: white;</string>
+              </property>
               <property name="text">
                <string>0:00</string>
               </property>
@@ -579,6 +609,9 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
                 <width>0</width>
                 <height>20</height>
                </size>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">color: white;</string>
               </property>
               <property name="text">
                <string>0:00</string>
@@ -644,7 +677,7 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
               </property>
               <property name="icon">
                <iconset resource="resources.qrc">
-                <normaloff>:/resources/icons/volume-2.svg</normaloff>:/resources/icons/volume-2.svg</iconset>
+                <normaloff>:/resources/icons/volume.svg</normaloff>:/resources/icons/volume.svg</iconset>
               </property>
               <property name="mediaButton" stdset="0">
                <bool>true</bool>
@@ -705,7 +738,15 @@ QPushButton[mediaButton=&quot;true&quot;]:pressed {
      <height>17</height>
     </rect>
    </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: #202020;
+color: white;</string>
+   </property>
    <widget class="QMenu" name="menuSettings">
+    <property name="styleSheet">
+     <string notr="true">background-color: #202020;
+color: white;</string>
+    </property>
     <property name="title">
      <string>File</string>
     </property>

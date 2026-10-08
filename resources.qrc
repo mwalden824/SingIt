@@ -15,5 +15,6 @@
         <file>resources/icons/arrows-shuffle-green.svg</file>
         <file>resources/app.ico</file>
         <file>resources/icons/microphone.svg</file>
+        <file>resources/icons/folder.svg</file>
     </qresource>
 </RCC>

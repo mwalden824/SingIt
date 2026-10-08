@@ -59,6 +59,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         resources/app.ico
         resources/app.ico
         resources/icons/microphone.svg
+        resources/icons/folder.svg
     )
 else()
     if(ANDROID)

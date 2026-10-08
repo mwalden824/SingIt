@@ -19,12 +19,18 @@
   <property name="windowTitle">
    <string>Importing Music</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">background-color: #202020;</string>
+  </property>
   <property name="modal">
    <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QLabel" name="statusLabel">
+     <property name="styleSheet">
+      <string notr="true">color: white;</string>
+     </property>
      <property name="text">
       <string>Starting import...</string>
      </property>
@@ -35,6 +41,9 @@
    </item>
    <item>
     <widget class="QProgressBar" name="progressBar">
+     <property name="styleSheet">
+      <string notr="true">color: white;background-color: #303030;</string>
+     </property>
      <property name="value">
       <number>0</number>
      </property>
@@ -45,6 +54,9 @@
    </item>
    <item>
     <widget class="QLabel" name="countLabel">
+     <property name="styleSheet">
+      <string notr="true">color: white;</string>
+     </property>
      <property name="text">
       <string>0 of 0</string>
      </property>
@@ -65,6 +77,9 @@
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="styleSheet">
+      <string notr="true">color: white;background-color: #303030;</string>
+     </property>
      <property name="standardButtons">
       <set>QDialogButtonBox::StandardButton::Cancel</set>
      </property>

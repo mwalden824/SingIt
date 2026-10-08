@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Options</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">background-color: #202020;</string>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
@@ -21,6 +24,20 @@
      </property>
      <item>
       <widget class="QGroupBox" name="musicLibraryGroupBox">
+       <property name="styleSheet">
+        <string notr="true">QGroupBox {
+    border: 1px solid white;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+	color: white;
+}</string>
+       </property>
        <property name="title">
         <string>Music Library</string>
        </property>
@@ -36,21 +53,32 @@
         <layout class="QGridLayout" name="gridLayout">
          <item row="0" column="0">
           <widget class="QLabel" name="musicfolderlabel">
+           <property name="styleSheet">
+            <string notr="true">color: white;</string>
+           </property>
            <property name="text">
             <string>Music Folder:</string>
            </property>
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QLineEdit" name="musicFolderLineEdit"/>
+          <widget class="QLineEdit" name="musicFolderLineEdit">
+           <property name="styleSheet">
+            <string notr="true">background-color: #303030;color: white;</string>
+           </property>
+          </widget>
          </item>
          <item row="0" column="2">
           <widget class="QPushButton" name="chooseMusicFolderButton">
+           <property name="styleSheet">
+            <string notr="true">background-color: #303030;</string>
+           </property>
            <property name="text">
             <string/>
            </property>
            <property name="icon">
-            <iconset theme="QIcon::ThemeIcon::FolderOpen"/>
+            <iconset resource="resources.qrc">
+             <normaloff>:/resources/icons/folder.svg</normaloff>:/resources/icons/folder.svg</iconset>
            </property>
           </widget>
          </item>
@@ -74,6 +102,9 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="styleSheet">
+            <string notr="true">color: white;background-color: #303030;</string>
+           </property>
            <property name="text">
             <string>Import</string>
            </property>
@@ -85,6 +116,21 @@
      </item>
      <item>
       <widget class="QGroupBox" name="lrclibGroupBox">
+       <property name="styleSheet">
+        <string notr="true">QGroupBox {
+    border: 1px solid white;
+    border-radius: 6px;
+    margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+	color: white;
+}</string>
+       </property>
        <property name="title">
         <string>LRCLIB Database</string>
        </property>
@@ -92,29 +138,46 @@
         <property name="geometry">
          <rect>
           <x>40</x>
-          <y>40</y>
+          <y>20</y>
           <width>351</width>
           <height>80</height>
          </rect>
         </property>
         <layout class="QGridLayout" name="gridLayout_2">
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <property name="verticalSpacing">
+          <number>4</number>
+         </property>
          <item row="0" column="0">
           <widget class="QLabel" name="label">
+           <property name="styleSheet">
+            <string notr="true">color: white;</string>
+           </property>
            <property name="text">
             <string>Database File: </string>
            </property>
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QLineEdit" name="lrclibDatabaseLineEdit"/>
+          <widget class="QLineEdit" name="lrclibDatabaseLineEdit">
+           <property name="styleSheet">
+            <string notr="true">background-color: #303030;color: white;</string>
+           </property>
+          </widget>
          </item>
          <item row="0" column="2">
           <widget class="QPushButton" name="chooseLrclibDatabaseFileButton">
+           <property name="styleSheet">
+            <string notr="true">background-color: #303030;</string>
+           </property>
            <property name="text">
             <string/>
            </property>
            <property name="icon">
-            <iconset theme="QIcon::ThemeIcon::FolderOpen"/>
+            <iconset resource="resources.qrc">
+             <normaloff>:/resources/icons/folder.svg</normaloff>:/resources/icons/folder.svg</iconset>
            </property>
           </widget>
          </item>
@@ -126,6 +189,9 @@
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="styleSheet">
+      <string notr="true">background-color: #303030;color: white;</string>
+     </property>
      <property name="standardButtons">
       <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set>
      </property>
@@ -133,6 +199,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
